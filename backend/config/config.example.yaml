@@ -1,0 +1,19 @@
+# 数据库配置示例
+database:
+  type: sqlite # sqlite, mysql, postgres
+  path: intehub.db # SQLite数据库文件路径
+  # MySQL/PostgreSQL配置示例
+  # host: localhost
+  # port: 3306
+  # username: root
+  # password: password
+  # database: intehub
+
+# 服务器配置
+server:
+  port: 8080
+  
+# JWT配置
+jwt:
+  secret: "intehub-secret-key-change-in-production"
+  expire_hours: 24

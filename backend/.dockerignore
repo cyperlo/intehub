@@ -1,0 +1,22 @@
+# 忽略数据库文件
+*.db
+*.db-shm
+*.db-wal
+
+# 忽略临时文件
+*.tmp
+*.log
+
+# 忽略 Git
+.git
+.gitignore
+
+# 忽略编译产物
+main
+*.exe
+
+# 忽略测试文件
+*_test.go
+
+# 忽略文档
+*.md
