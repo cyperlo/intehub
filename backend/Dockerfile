@@ -6,6 +6,9 @@ WORKDIR /app
 # 配置 Alpine 镜像源（使用阿里云镜像）
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
+# 安装编译依赖（CGO 需要 gcc）
+RUN apk add --no-cache gcc musl-dev sqlite-dev
+
 # 设置 Go 代理（使用中国镜像加速下载）
 ENV GOPROXY=https://goproxy.cn,direct
 ENV GO111MODULE=on
