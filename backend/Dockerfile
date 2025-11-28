@@ -12,6 +12,7 @@ RUN apk add --no-cache gcc musl-dev sqlite-dev
 # 设置 Go 代理（使用中国镜像加速下载）
 ENV GOPROXY=https://goproxy.cn,direct
 ENV GO111MODULE=on
+ENV CGO_CFLAGS="-D_LARGEFILE64_SOURCE"
 
 # 复制 go mod 文件
 COPY go.mod go.sum ./
@@ -22,8 +23,8 @@ RUN go mod download
 # 复制源代码
 COPY . .
 
-# 编译（启用 CGO 以支持 SQLite）
-RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o main .
+# 编译（启用 CGO 以支持 SQLite，添加 musl 兼容标签）
+RUN CGO_ENABLED=1 GOOS=linux go build -tags musl -ldflags="-s -w" -o main .
 
 # 运行阶段
 FROM alpine:latest
