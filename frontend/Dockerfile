@@ -3,6 +3,12 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# 配置 Alpine 镜像源
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+
+# 设置 npm 淘宝镜像（加速 npm 安装）
+RUN npm config set registry https://registry.npmmirror.com
+
 # 复制 package.json
 COPY package*.json ./
 
@@ -17,6 +23,9 @@ RUN npm run build
 
 # 运行阶段 - 使用 Nginx 提供静态文件服务
 FROM nginx:alpine
+
+# 配置 Alpine 镜像源
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 # 复制构建产物到 Nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
