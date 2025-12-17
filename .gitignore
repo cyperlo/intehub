@@ -5,10 +5,10 @@ backend/*.log
 backend/config/local.yaml
 
 # Frontend
-frontend/node_modules
-frontend/dist
-frontend/.env.local
-frontend/.DS_Store
+ui/node_modules
+ui/dist
+ui/.env.local
+ui/.DS_Store
 
 # IDE
 .vscode/

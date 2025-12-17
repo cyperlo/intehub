@@ -135,7 +135,7 @@ func DeleteApp(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "删除成功"})
 }
 
-func code2Runnable(code string)
+func code2Runnable(code string) {}
 
 // RunApp 运行应用
 func RunApp(c *gin.Context) {
