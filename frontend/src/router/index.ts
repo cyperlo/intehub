@@ -39,6 +39,18 @@ const routes: RouteRecordRaw[] = [
         name: 'PushHistory',
         component: () => import('../views/PushHistory.vue'),
         meta: { title: '推送历史' }
+      },
+      {
+        path: '/schedule-tasks',
+        name: 'ScheduleTasks',
+        component: () => import('../views/ScheduleTasks.vue'),
+        meta: { title: '定时任务' }
+      },
+      {
+        path: '/system/users',
+        name: 'SystemUsers',
+        component: () => import('../views/system/UserManagement.vue'),
+        meta: { title: '用户管理', requiresAdmin: true }
       }
     ]
   }

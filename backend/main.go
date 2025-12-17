@@ -2,6 +2,7 @@ package main
 
 import (
 	"intehub/config"
+	"intehub/controllers"
 	"intehub/models"
 	"intehub/routes"
 	"log"
@@ -22,12 +23,19 @@ func main() {
 		&models.PushHistory{},
 		&models.FieldSchema{},
 		&models.ConfigFieldRelation{},
+		&models.SystemLog{},
+		&models.Menu{},
+		&models.ScheduleTask{},
+		&models.ScheduleLog{},
 	); err != nil {
 		log.Fatal("数据库迁移失败:", err)
 	}
 
 	// 创建默认管理员账户
 	models.CreateDefaultAdmin()
+
+	// 初始化定时任务调度器
+	controllers.InitScheduler()
 
 	// 创建Gin引擎
 	r := gin.Default()

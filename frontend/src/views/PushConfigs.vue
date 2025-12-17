@@ -3,52 +3,95 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>推送配置管理</span>
-          <el-button type="primary" @click="handleAdd">
+          <span class="header-title">推送配置管理</span>
+          <el-button type="primary" @click="handleAdd" size="default">
             <el-icon><Plus /></el-icon>
-            新增配置
+            <span class="btn-text">新增配置</span>
           </el-button>
         </div>
       </template>
       
-      <el-table :data="configs" style="width: 100%" v-loading="loading">
-        <el-table-column prop="name" label="名称" width="150" />
-        <el-table-column prop="description" label="描述" show-overflow-tooltip />
-        <el-table-column prop="url" label="URL" show-overflow-tooltip />
+      <!-- 桌面端表格 -->
+      <el-table :data="configs" v-loading="loading" class="desktop-table">
+        <el-table-column prop="name" label="名称" min-width="120" />
+        <el-table-column prop="description" label="描述" show-overflow-tooltip min-width="150" />
+        <el-table-column prop="url" label="URL" show-overflow-tooltip min-width="200" />
         <el-table-column prop="method" label="方法" width="80" />
-        <el-table-column label="状态" width="100">
+        <el-table-column label="状态" width="80">
           <template #default="{ row }">
-            <el-switch v-model="row.enabled" @change="handleToggleStatus(row)" />
+            <el-switch v-model="row.enabled" @change="handleToggleStatus(row)" size="small" />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="320" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
-            <el-button type="success" size="small" @click="handleConfigFields(row)">
+            <el-button type="success" size="small" @click="handleConfigFields(row)" link>
               <el-icon><Grid /></el-icon>
               字段
             </el-button>
-            <el-button type="primary" size="small" @click="handleTest(row)">
+            <el-button type="primary" size="small" @click="handleTest(row)" link>
               <el-icon><Promotion /></el-icon>
               测试
             </el-button>
-            <el-button type="warning" size="small" @click="handleEdit(row)">
+            <el-button type="warning" size="small" @click="handleEdit(row)" link>
               <el-icon><Edit /></el-icon>
               编辑
             </el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">
+            <el-button type="danger" size="small" @click="handleDelete(row)" link>
               <el-icon><Delete /></el-icon>
               删除
             </el-button>
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 移动端卡片列表 -->
+      <div class="mobile-list" v-loading="loading">
+        <el-card v-for="config in configs" :key="config.id" class="config-card" shadow="hover">
+          <div class="config-header">
+            <div class="config-name-row">
+              <h4>{{ config.name }}</h4>
+              <el-switch v-model="config.enabled" @change="handleToggleStatus(config)" size="small" />
+            </div>
+            <div class="config-method">{{ config.method }}</div>
+          </div>
+          <div class="config-info">
+            <div class="info-row" v-if="config.description">
+              <span class="label">描述：</span>
+              <span class="value">{{ config.description }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">URL：</span>
+              <span class="value">{{ config.url }}</span>
+            </div>
+          </div>
+          <div class="card-actions">
+            <el-button type="success" size="small" @click="handleConfigFields(config)">
+              <el-icon><Grid /></el-icon>
+              字段
+            </el-button>
+            <el-button type="primary" size="small" @click="handleTest(config)">
+              <el-icon><Promotion /></el-icon>
+              测试
+            </el-button>
+            <el-button type="warning" size="small" @click="handleEdit(config)">
+              <el-icon><Edit /></el-icon>
+              编辑
+            </el-button>
+            <el-button type="danger" size="small" @click="handleDelete(config)">
+              <el-icon><Delete /></el-icon>
+              删除
+            </el-button>
+          </div>
+        </el-card>
+      </div>
     </el-card>
     
     <!-- 新增/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
       :title="dialogTitle"
-      width="600px"
+      :width="isMobile ? '95%' : '600px'"
+      :fullscreen="isMobile"
       @close="resetForm"
     >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
@@ -110,7 +153,7 @@
     </el-dialog>
     
     <!-- 字段配置对话框 -->
-    <el-dialog v-model="fieldDialogVisible" title="配置字段" width="600px">
+    <el-dialog v-model="fieldDialogVisible" title="配置字段" :width="isMobile ? '95%' : '600px'" :fullscreen="isMobile">
       <div style="margin-bottom: 16px;">
         <el-alert type="info" :closable="false">
           选择此配置使用的字段，推送时将根据这些字段生成表单
@@ -136,7 +179,7 @@
     </el-dialog>
     
     <!-- 测试推送对话框 -->
-    <el-dialog v-model="testDialogVisible" title="测试推送" width="600px">
+    <el-dialog v-model="testDialogVisible" title="测试推送" :width="isMobile ? '95%' : '600px'" :fullscreen="isMobile">
       <div v-if="testFields.length > 0">
         <el-form :model="testFormData" label-width="100px">
           <el-form-item 
@@ -198,12 +241,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, onUnmounted, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { getPushConfigs, createPushConfig, updatePushConfig, deletePushConfig, sendPush } from '../api/push'
 import { getFieldSchemas, getConfigFields, updateConfigFields } from '../api/field'
 import type { PushConfig, FieldSchema } from '../types'
+
+const windowWidth = ref(window.innerWidth)
+const isMobile = computed(() => windowWidth.value <= 768)
+
+const handleResize = () => {
+  windowWidth.value = window.innerWidth
+}
 
 const loading = ref(false)
 const configs = ref<PushConfig[]>([])
@@ -404,14 +454,114 @@ const resetForm = () => {
 }
 
 onMounted(() => {
+  window.addEventListener('resize', handleResize)
   loadConfigs()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
 <style scoped>
+.push-configs {
+  width: 100%;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.desktop-table {
+  width: 100%;
+}
+
+.mobile-list {
+  display: none;
+}
+
+.config-card {
+  margin-bottom: 12px;
+}
+
+.config-header {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.config-name-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.config-name-row h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #303133;
+}
+
+.config-method {
+  font-size: 13px;
+  color: #909399;
+  font-weight: 500;
+}
+
+.config-info {
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.info-row {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.info-row .label {
+  color: #909399;
+  min-width: 50px;
+  flex-shrink: 0;
+}
+
+.info-row .value {
+  color: #303133;
+  flex: 1;
+  word-break: break-all;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid #ebeef5;
+}
+
+@media (max-width: 768px) {
+  .desktop-table {
+    display: none;
+  }
+  
+  .mobile-list {
+    display: block;
+  }
+  
+  .btn-text {
+    margin-left: 4px;
+  }
+  
+  .card-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }
 </style>

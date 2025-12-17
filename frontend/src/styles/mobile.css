@@ -1,0 +1,122 @@
+/* 移动端全局样式 */
+@media (max-width: 768px) {
+  /* 全局字体调整 */
+  body {
+    font-size: 14px;
+  }
+
+  /* 卡片样式 */
+  .el-card {
+    margin-bottom: 12px;
+  }
+
+  .el-card__header {
+    padding: 12px 16px;
+  }
+
+  .el-card__body {
+    padding: 12px 16px;
+  }
+
+  /* 表单样式 */
+  .el-form-item {
+    margin-bottom: 16px;
+  }
+
+  .el-form-item__label {
+    font-size: 14px;
+  }
+
+  /* 按钮样式 */
+  .el-button {
+    padding: 8px 12px;
+  }
+
+  .el-button--small {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  /* 对话框样式 */
+  .el-dialog {
+    margin: 0 !important;
+  }
+
+  .el-dialog__header {
+    padding: 16px;
+  }
+
+  .el-dialog__body {
+    padding: 16px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+  }
+
+  .el-dialog__footer {
+    padding: 12px 16px;
+  }
+
+  /* 表格样式 */
+  .el-table {
+    font-size: 13px;
+  }
+
+  .el-table th,
+  .el-table td {
+    padding: 8px 0;
+  }
+
+  /* 分页样式 */
+  .el-pagination {
+    padding: 12px 0;
+  }
+
+  .el-pagination.is-background .el-pager li {
+    min-width: 28px;
+    height: 28px;
+    line-height: 28px;
+  }
+
+  /* 标签页样式 */
+  .el-tabs__item {
+    padding: 0 12px;
+    font-size: 14px;
+  }
+
+  /* 下拉选择样式 */
+  .el-select {
+    width: 100%;
+  }
+
+  /* 输入框样式 */
+  .el-input__inner {
+    font-size: 14px;
+  }
+
+  /* 抽屉样式 */
+  .el-drawer__header {
+    padding: 16px;
+    margin-bottom: 0;
+  }
+
+  .el-drawer__body {
+    padding: 0;
+  }
+}
+
+/* 超小屏幕 */
+@media (max-width: 480px) {
+  body {
+    font-size: 13px;
+  }
+
+  .el-button {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .el-card__header,
+  .el-card__body {
+    padding: 10px 12px;
+  }
+}

@@ -1,6 +1,65 @@
 <template>
   <el-container class="layout-container">
-    <el-aside width="200px">
+    <!-- 移动端顶部栏 -->
+    <el-header class="mobile-header" v-if="isMobile">
+      <div class="mobile-header-content">
+        <el-icon @click="drawerVisible = true" :size="24" class="menu-icon">
+          <Menu />
+        </el-icon>
+        <div class="logo">InteHub</div>
+        <el-dropdown>
+          <el-icon :size="24"><User /></el-icon>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="handleLogout">
+                <el-icon><SwitchButton /></el-icon>
+                退出登录
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </div>
+    </el-header>
+
+    <!-- 移动端抽屉菜单 -->
+    <el-drawer v-model="drawerVisible" direction="ltr" :size="250" v-if="isMobile">
+      <template #header>
+        <div class="drawer-logo">InteHub</div>
+      </template>
+      <el-menu
+        :default-active="activeMenu"
+        router
+        @select="drawerVisible = false"
+      >
+        <el-menu-item index="/dashboard">
+          <el-icon><DataLine /></el-icon>
+          <span>仪表盘</span>
+        </el-menu-item>
+        <el-menu-item index="/field-schemas">
+          <el-icon><Grid /></el-icon>
+          <span>字段定义</span>
+        </el-menu-item>
+        <el-menu-item index="/push-configs">
+          <el-icon><Setting /></el-icon>
+          <span>推送配置</span>
+        </el-menu-item>
+        <el-menu-item index="/push-history">
+          <el-icon><List /></el-icon>
+          <span>推送历史</span>
+        </el-menu-item>
+        <el-menu-item index="/schedule-tasks">
+          <el-icon><Clock /></el-icon>
+          <span>定时任务</span>
+        </el-menu-item>
+        <el-menu-item index="/system/users" v-if="authStore.user?.role === 'admin'">
+          <el-icon><User /></el-icon>
+          <span>用户管理</span>
+        </el-menu-item>
+      </el-menu>
+    </el-drawer>
+
+    <!-- 桌面端侧边栏 -->
+    <el-aside width="200px" v-if="!isMobile">
       <div class="logo">InteHub</div>
       <el-menu
         :default-active="activeMenu"
@@ -23,11 +82,20 @@
           <el-icon><List /></el-icon>
           <span>推送历史</span>
         </el-menu-item>
+        <el-menu-item index="/schedule-tasks">
+          <el-icon><Clock /></el-icon>
+          <span>定时任务</span>
+        </el-menu-item>
+        <el-menu-item index="/system/users" v-if="authStore.user?.role === 'admin'">
+          <el-icon><User /></el-icon>
+          <span>用户管理</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     
     <el-container>
-      <el-header>
+      <!-- 桌面端顶部栏 -->
+      <el-header v-if="!isMobile">
         <div class="header-content">
           <h3>{{ currentTitle }}</h3>
           <div class="user-info">
@@ -57,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAuthStore } from '../stores/auth'
@@ -67,8 +135,23 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
+const drawerVisible = ref(false)
+const windowWidth = ref(window.innerWidth)
+const isMobile = computed(() => windowWidth.value <= 768)
 const activeMenu = computed(() => route.path)
 const currentTitle = computed(() => route.meta.title || '')
+
+const handleResize = () => {
+  windowWidth.value = window.innerWidth
+}
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
 
 const handleLogout = async () => {
   try {
@@ -164,5 +247,59 @@ const handleLogout = async () => {
 .el-main {
   background-color: #f0f2f5;
   padding: 20px;
+}
+
+/* 移动端样式 */
+.mobile-header {
+  background-color: #304156;
+  border-bottom: none;
+  padding: 0 16px;
+  height: 56px !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.mobile-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+}
+
+.mobile-header-content .logo {
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+  background: none;
+  height: auto;
+}
+
+.mobile-header-content .el-icon {
+  color: #fff;
+}
+
+.menu-icon {
+  color: #fff;
+  cursor: pointer;
+}
+
+.drawer-logo {
+  font-size: 20px;
+  font-weight: bold;
+  color: #304156;
+}
+
+@media (max-width: 768px) {
+  .layout-container {
+    flex-direction: column;
+  }
+  
+  .el-main {
+    padding: 12px;
+    padding-top: 68px;
+  }
 }
 </style>

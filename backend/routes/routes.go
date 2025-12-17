@@ -54,6 +54,30 @@ func SetupRoutes(r *gin.Engine) {
 				// 推送历史
 				push.GET("/history", controllers.GetPushHistory)
 			}
+
+			// 系统管理
+			system := authorized.Group("/system")
+			{
+				// 用户管理
+				system.GET("/users", controllers.GetUsers)
+				system.POST("/users", controllers.CreateUser)
+				system.PUT("/users/:id", controllers.UpdateUser)
+				system.DELETE("/users/:id", controllers.DeleteUser)
+			}
+
+			// 定时任务
+			schedule := authorized.Group("/schedule")
+			{
+				schedule.GET("/tasks", controllers.GetScheduleTasks)
+				schedule.GET("/tasks/:id", controllers.GetScheduleTask)
+				schedule.POST("/tasks", controllers.CreateScheduleTask)
+				schedule.PUT("/tasks/:id", controllers.UpdateScheduleTask)
+				schedule.DELETE("/tasks/:id", controllers.DeleteScheduleTask)
+				schedule.POST("/tasks/:id/toggle", controllers.ToggleScheduleTask)
+
+				// 任务执行日志
+				schedule.GET("/logs", controllers.GetScheduleLogs)
+			}
 		}
 	}
 

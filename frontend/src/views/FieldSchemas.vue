@@ -3,50 +3,90 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>字段定义管理</span>
-          <el-button type="primary" @click="handleAdd">
+          <span class="header-title">字段定义管理</span>
+          <el-button type="primary" @click="handleAdd" size="default">
             <el-icon><Plus /></el-icon>
-            新增字段
+            <span class="btn-text">新增字段</span>
           </el-button>
         </div>
       </template>
       
-      <el-table :data="fields" style="width: 100%" v-loading="loading">
-        <el-table-column prop="name" label="字段名称" width="150" />
-        <el-table-column prop="key" label="字段Key" width="150" />
-        <el-table-column label="字段类型" width="120">
+      <!-- 桌面端表格 -->
+      <el-table :data="fields" v-loading="loading" class="desktop-table">
+        <el-table-column prop="name" label="字段名称" min-width="120" />
+        <el-table-column prop="key" label="字段Key" min-width="120" />
+        <el-table-column label="字段类型" width="110">
           <template #default="{ row }">
-            <el-tag :type="getTypeColor(row.type)">{{ getTypeLabel(row.type) }}</el-tag>
+            <el-tag :type="getTypeColor(row.type)" size="small">{{ getTypeLabel(row.type) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="description" label="描述" show-overflow-tooltip />
-        <el-table-column label="必填" width="80" align="center">
+        <el-table-column prop="description" label="描述" show-overflow-tooltip min-width="150" />
+        <el-table-column label="必填" width="70" align="center">
           <template #default="{ row }">
-            <el-icon v-if="row.required" color="#67c23a"><CircleCheck /></el-icon>
-            <el-icon v-else color="#909399"><CircleClose /></el-icon>
+            <el-icon v-if="row.required" color="#67c23a" :size="18"><CircleCheck /></el-icon>
+            <el-icon v-else color="#909399" :size="18"><CircleClose /></el-icon>
           </template>
         </el-table-column>
-        <el-table-column prop="placeholder" label="占位符" width="150" show-overflow-tooltip />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column prop="placeholder" label="占位符" min-width="120" show-overflow-tooltip />
+        <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
-            <el-button type="warning" size="small" @click="handleEdit(row)">
+            <el-button type="warning" size="small" @click="handleEdit(row)" link>
               <el-icon><Edit /></el-icon>
               编辑
             </el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">
+            <el-button type="danger" size="small" @click="handleDelete(row)" link>
               <el-icon><Delete /></el-icon>
               删除
             </el-button>
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 移动端卡片列表 -->
+      <div class="mobile-list" v-loading="loading">
+        <el-card v-for="field in fields" :key="field.id" class="field-card" shadow="hover">
+          <div class="field-header">
+            <div class="field-name-row">
+              <h4>{{ field.name }}</h4>
+              <el-tag :type="getTypeColor(field.type)" size="small">{{ getTypeLabel(field.type) }}</el-tag>
+            </div>
+            <div class="field-key">Key: {{ field.key }}</div>
+          </div>
+          <div class="field-info">
+            <div class="info-row" v-if="field.description">
+              <span class="label">描述：</span>
+              <span class="value">{{ field.description }}</span>
+            </div>
+            <div class="info-row" v-if="field.placeholder">
+              <span class="label">占位符：</span>
+              <span class="value">{{ field.placeholder }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">必填：</span>
+              <el-icon v-if="field.required" color="#67c23a" :size="16"><CircleCheck /></el-icon>
+              <el-icon v-else color="#909399" :size="16"><CircleClose /></el-icon>
+            </div>
+          </div>
+          <div class="card-actions">
+            <el-button type="warning" size="small" @click="handleEdit(field)">
+              <el-icon><Edit /></el-icon>
+              编辑
+            </el-button>
+            <el-button type="danger" size="small" @click="handleDelete(field)">
+              <el-icon><Delete /></el-icon>
+              删除
+            </el-button>
+          </div>
+        </el-card>
+      </div>
     </el-card>
     
     <!-- 新增/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
       :title="dialogTitle"
-      width="600px"
+      :width="isMobile ? '95%' : '600px'"
+      :fullscreen="isMobile"
       @close="resetForm"
     >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
@@ -56,9 +96,7 @@
         
         <el-form-item label="字段Key" prop="key">
           <el-input v-model="form.key" placeholder="例如：title（用于模板变量）" />
-          <template #extra>
-            <span style="color: #909399; font-size: 12px;">用于模板中的变量名，如 {{title}}</span>
-          </template>
+          <div style="color: #909399; font-size: 12px; margin-top: 4px;">用于模板中的变量名，如 {<!-- -->{title}<!-- -->}</div>
         </el-form-item>
         
         <el-form-item label="字段类型" prop="type">
@@ -92,9 +130,7 @@
             :rows="3" 
             placeholder='["选项1", "选项2", "选项3"]'
           />
-          <template #extra>
-            <span style="color: #909399; font-size: 12px;">JSON 数组格式</span>
-          </template>
+          <div style="color: #909399; font-size: 12px; margin-top: 4px;">JSON 数组格式</div>
         </el-form-item>
         
         <el-form-item label="必填">
@@ -111,11 +147,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, onUnmounted, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { getFieldSchemas, createFieldSchema, updateFieldSchema, deleteFieldSchema } from '../api/field'
 import type { FieldSchema, FieldType } from '../types'
+
+const windowWidth = ref(window.innerWidth)
+const isMobile = computed(() => windowWidth.value <= 768)
+
+const handleResize = () => {
+  windowWidth.value = window.innerWidth
+}
 
 const loading = ref(false)
 const fields = ref<FieldSchema[]>([])
@@ -255,14 +298,114 @@ const resetForm = () => {
 }
 
 onMounted(() => {
+  window.addEventListener('resize', handleResize)
   loadFields()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
 <style scoped>
+.field-schemas {
+  width: 100%;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.desktop-table {
+  width: 100%;
+}
+
+.mobile-list {
+  display: none;
+}
+
+.field-card {
+  margin-bottom: 12px;
+}
+
+.field-header {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.field-name-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.field-name-row h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #303133;
+}
+
+.field-key {
+  font-size: 13px;
+  color: #909399;
+}
+
+.field-info {
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.info-row .label {
+  color: #909399;
+  min-width: 70px;
+  flex-shrink: 0;
+}
+
+.info-row .value {
+  color: #303133;
+  flex: 1;
+  word-break: break-all;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid #ebeef5;
+}
+
+@media (max-width: 768px) {
+  .desktop-table {
+    display: none;
+  }
+  
+  .mobile-list {
+    display: block;
+  }
+  
+  .btn-text {
+    margin-left: 4px;
+  }
+  
+  .card-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }
 </style>
