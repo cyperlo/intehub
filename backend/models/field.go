@@ -21,10 +21,8 @@ const (
 
 // FieldSchema 字段定义
 type FieldSchema struct {
-	ID           uint           `gorm:"primarykey" json:"id"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
+	ID uint `gorm:"primarykey" json:"id"`
+
 	Name         string         `gorm:"not null" json:"name"`              // 字段名称
 	Key          string         `gorm:"uniqueIndex;not null" json:"key"`   // 字段key（用于模板变量）
 	Type         FieldType      `gorm:"not null;default:text" json:"type"` // 字段类型
@@ -35,6 +33,9 @@ type FieldSchema struct {
 	Placeholder  string         `json:"placeholder"`                       // 占位符
 	Validation   string         `gorm:"type:text" json:"validation"`       // 验证规则（JSON格式）
 	UserID       uint           `gorm:"not null" json:"user_id"`           // 创建者ID
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 // ConfigFieldRelation 配置-字段关联表

@@ -58,6 +58,8 @@ func CreateFieldSchema(c *gin.Context) {
 		return
 	}
 
+	// 强制清空 ID，确保由数据库自动生成
+	field.ID = 0
 	field.UserID = userID.(uint)
 
 	db := config.GetDB()

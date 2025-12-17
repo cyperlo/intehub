@@ -240,6 +240,7 @@ const handleDelete = async (row: FieldSchema) => {
 
 const resetForm = () => {
   Object.assign(form, {
+    id: undefined,
     name: '',
     key: '',
     type: 'text',
