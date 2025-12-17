@@ -191,6 +191,11 @@ func SendPush(c *gin.Context) {
 	}
 }
 
+// ExecutePushInternal 执行实际的推送操作（供内部调用）
+func ExecutePushInternal(config *models.PushConfig, data map[string]string) models.PushHistory {
+	return executePush(config, data)
+}
+
 // executePush 执行实际的推送操作
 func executePush(config *models.PushConfig, data map[string]string) models.PushHistory {
 	startTime := time.Now()

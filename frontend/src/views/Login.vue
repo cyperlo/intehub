@@ -3,7 +3,7 @@
     <el-card class="login-card">
       <template #header>
         <div class="card-header">
-          <h2>InteHub 集成推送平台</h2>
+          <h2>InteHub 集成平台</h2>
         </div>
       </template>
       

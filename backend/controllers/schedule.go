@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"encoding/json"
+	"fmt"
 	"intehub/config"
 	"intehub/models"
 	"net/http"
@@ -53,7 +55,7 @@ func executeTask(task models.ScheduleTask) {
 	// 根据任务类型执行
 	switch task.TaskType {
 	case "push":
-		message, err = executePushTask(task.ConfigID)
+		message, err = executePushTask(task.ConfigID, task.FieldData)
 	default:
 		message = "未知的任务类型"
 		err = nil
@@ -81,7 +83,7 @@ func executeTask(task models.ScheduleTask) {
 }
 
 // executePushTask 执行推送任务
-func executePushTask(configID uint) (string, error) {
+func executePushTask(configID uint, fieldDataJSON string) (string, error) {
 	db := config.GetDB()
 	var pushConfig models.PushConfig
 
@@ -89,9 +91,34 @@ func executePushTask(configID uint) (string, error) {
 		return "", err
 	}
 
-	// 这里可以调用推送逻辑
-	// 暂时返回成功
-	return "推送任务执行成功", nil
+	// 解析字段数据
+	var fieldData map[string]interface{}
+	if fieldDataJSON != "" {
+		if err := json.Unmarshal([]byte(fieldDataJSON), &fieldData); err != nil {
+			return "", err
+		}
+	} else {
+		fieldData = make(map[string]interface{})
+	}
+
+	// 转换为 map[string]string 供 executePush 使用
+	dataStr := make(map[string]string)
+	for k, v := range fieldData {
+		dataStr[k] = fmt.Sprintf("%v", v)
+	}
+
+	// 调用实际的推送函数
+	history := ExecutePushInternal(&pushConfig, dataStr)
+
+	// 保存历史记录（系统用户ID为0）
+	history.UserID = 0
+	db.Create(&history)
+
+	if !history.Success {
+		return "", fmt.Errorf("集成失败: %s", history.Error)
+	}
+
+	return fmt.Sprintf("集成成功，状态码: %d", history.StatusCode), nil
 }
 
 // GetScheduleTasks 获取定时任务列表

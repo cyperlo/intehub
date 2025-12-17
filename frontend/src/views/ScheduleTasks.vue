@@ -23,7 +23,11 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="last_run_at" label="上次运行" width="160" />
+        <el-table-column label="上次运行" width="180">
+          <template #default="{ row }">
+            {{ formatTime(row.last_run_at) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button 
@@ -60,7 +64,7 @@
             </div>
             <div class="info-row" v-if="task.last_run_at">
               <span class="label">上次运行：</span>
-              <span class="value">{{ task.last_run_at }}</span>
+              <span class="value">{{ formatTime(task.last_run_at) }}</span>
             </div>
           </div>
           <div class="card-actions">
@@ -100,7 +104,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="关联配置" prop="config_id">
-          <el-select v-model="form.config_id" placeholder="选择推送配置">
+          <el-select v-model="form.config_id" placeholder="选择推送配置" @change="handleConfigChange">
             <el-option 
               v-for="config in pushConfigs" 
               :key="config.id" 
@@ -109,6 +113,54 @@
             />
           </el-select>
         </el-form-item>
+        
+        <!-- 字段数据配置 -->
+        <el-divider v-if="configFields.length > 0">字段数据配置</el-divider>
+        <div v-if="configFields.length > 0" class="field-data-section">
+          <el-form-item 
+            v-for="field in configFields" 
+            :key="field.id"
+            :label="field.name"
+            :required="field.required"
+          >
+            <el-input 
+              v-if="field.type === 'text' || field.type === 'url' || field.type === 'email'"
+              v-model="fieldDataForm[field.key]"
+              :placeholder="field.placeholder || field.description"
+            />
+            <el-input 
+              v-else-if="field.type === 'textarea'"
+              v-model="fieldDataForm[field.key]"
+              type="textarea"
+              :rows="3"
+              :placeholder="field.placeholder || field.description"
+            />
+            <el-input-number 
+              v-else-if="field.type === 'number'"
+              v-model="fieldDataForm[field.key]"
+              style="width: 100%"
+            />
+            <el-date-picker 
+              v-else-if="field.type === 'date'"
+              v-model="fieldDataForm[field.key]"
+              type="date"
+              style="width: 100%"
+            />
+            <el-select 
+              v-else-if="field.type === 'select'"
+              v-model="fieldDataForm[field.key]"
+              style="width: 100%"
+            >
+              <el-option 
+                v-for="(opt, idx) in parseOptions(field.options)" 
+                :key="idx"
+                :label="opt"
+                :value="opt"
+              />
+            </el-select>
+          </el-form-item>
+        </div>
+        
         <el-form-item label="启用">
           <el-switch v-model="form.enabled" />
         </el-form-item>
@@ -131,7 +183,11 @@
         </el-table-column>
         <el-table-column prop="message" label="信息" show-overflow-tooltip />
         <el-table-column prop="duration" label="耗时(ms)" width="100" />
-        <el-table-column prop="started_at" label="开始时间" width="180" />
+        <el-table-column label="开始时间" width="180">
+          <template #default="{ row }">
+            {{ formatTime(row.started_at) }}
+          </template>
+        </el-table-column>
       </el-table>
       <el-pagination
         v-model:current-page="logPage"
@@ -184,6 +240,10 @@ const logPageSize = ref(20)
 const logTotal = ref(0)
 const currentLogTaskId = ref<number>()
 
+// 字段相关
+const configFields = ref<any[]>([])
+const fieldDataForm = reactive<Record<string, any>>({})
+
 const form = reactive<ScheduleTask>({
   name: '',
   description: '',
@@ -200,6 +260,23 @@ const rules: FormRules = {
   cron_expr: [{ required: true, message: '请输入Cron表达式', trigger: 'blur' }],
   task_type: [{ required: true, message: '请选择任务类型', trigger: 'change' }],
   config_id: [{ required: true, message: '请选择关联配置', trigger: 'change' }]
+}
+
+const formatTime = (time: string | null | undefined) => {
+  if (!time) return '-'
+  try {
+    return new Date(time).toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    })
+  } catch {
+    return time
+  }
 }
 
 const loadTasks = async () => {
@@ -219,17 +296,67 @@ const loadPushConfigs = async () => {
   }
 }
 
+const handleConfigChange = async (configId: number) => {
+  if (!configId) {
+    configFields.value = []
+    return
+  }
+  
+  try {
+    const { getConfigFields } = await import('../api/field')
+    configFields.value = await getConfigFields(configId)
+    
+    // 清空字段数据
+    Object.keys(fieldDataForm).forEach(key => delete fieldDataForm[key])
+    
+    // 设置默认值
+    configFields.value.forEach((field: any) => {
+      if (field.default_value) {
+        fieldDataForm[field.key] = field.default_value
+      }
+    })
+  } catch (error) {
+    console.error('加载字段失败:', error)
+  }
+}
+
+const parseOptions = (optionsStr: string) => {
+  try {
+    return JSON.parse(optionsStr || '[]')
+  } catch {
+    return []
+  }
+}
+
 const handleAdd = () => {
   dialogTitle.value = '新增任务'
   currentTaskId.value = undefined
   resetForm()
+  configFields.value = []
+  Object.keys(fieldDataForm).forEach(key => delete fieldDataForm[key])
   dialogVisible.value = true
 }
 
-const handleEdit = (row: ScheduleTask) => {
+const handleEdit = async (row: ScheduleTask) => {
   dialogTitle.value = '编辑任务'
   currentTaskId.value = row.id
   Object.assign(form, row)
+  
+  // 加载配置的字段
+  if (row.config_id) {
+    await handleConfigChange(row.config_id)
+    
+    // 加载已保存的字段数据
+    if (row.field_data) {
+      try {
+        const savedData = JSON.parse(row.field_data)
+        Object.assign(fieldDataForm, savedData)
+      } catch (error) {
+        console.error('解析字段数据失败:', error)
+      }
+    }
+  }
+  
   dialogVisible.value = true
 }
 
@@ -240,11 +367,17 @@ const handleSubmit = async () => {
     if (valid) {
       submitting.value = true
       try {
+        // 将字段数据转换为 JSON 字符串
+        const taskData = {
+          ...form,
+          field_data: JSON.stringify(fieldDataForm)
+        }
+        
         if (currentTaskId.value) {
-          await updateScheduleTask(currentTaskId.value, form)
+          await updateScheduleTask(currentTaskId.value, taskData)
           ElMessage.success('更新成功')
         } else {
-          await createScheduleTask(form)
+          await createScheduleTask(taskData)
           ElMessage.success('创建成功')
         }
         dialogVisible.value = false
@@ -315,6 +448,8 @@ const resetForm = () => {
     config_id: 0,
     enabled: false
   })
+  configFields.value = []
+  Object.keys(fieldDataForm).forEach(key => delete fieldDataForm[key])
   formRef.value?.clearValidate()
 }
 
@@ -424,5 +559,12 @@ onUnmounted(() => {
     width: 100%;
     margin-bottom: 8px;
   }
+}
+
+.field-data-section {
+  background: #f5f7fa;
+  padding: 16px;
+  border-radius: 4px;
+  margin-bottom: 16px;
 }
 </style>

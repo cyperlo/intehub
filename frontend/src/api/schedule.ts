@@ -7,6 +7,7 @@ export interface ScheduleTask {
   cron_expr: string
   task_type: string
   config_id: number
+  field_data?: string
   enabled: boolean
   last_run_at?: string
   next_run_at?: string

@@ -14,6 +14,7 @@ type ScheduleTask struct {
 	CronExpr    string         `gorm:"not null" json:"cron_expr"`       // Cron表达式
 	TaskType    string         `gorm:"not null" json:"task_type"`       // 任务类型：push（推送）
 	ConfigID    uint           `gorm:"not null;index" json:"config_id"` // 关联的配置ID
+	FieldData   string         `gorm:"type:text" json:"field_data"`     // 字段数据（JSON格式）
 	Enabled     bool           `gorm:"default:false" json:"enabled"`    // 是否启用
 	LastRunAt   *time.Time     `json:"last_run_at"`                     // 上次运行时间
 	NextRunAt   *time.Time     `json:"next_run_at"`                     // 下次运行时间

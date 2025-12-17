@@ -3,7 +3,7 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span class="header-title">推送配置管理</span>
+          <span class="header-title">集成配置管理</span>
           <el-button type="primary" @click="handleAdd" size="default">
             <el-icon><Plus /></el-icon>
             <span class="btn-text">新增配置</span>
@@ -103,7 +103,7 @@
           <el-input v-model="form.description" type="textarea" :rows="2" placeholder="请输入描述" />
         </el-form-item>
         
-        <el-form-item label="推送URL" prop="url">
+        <el-form-item label="集成URL" prop="url">
           <el-input v-model="form.url" placeholder="https://example.com/webhook" />
         </el-form-item>
         
@@ -132,7 +132,7 @@
           />
         </el-form-item>
         
-        <el-form-item label="推送模板" prop="template">
+        <el-form-item label="请求模板" prop="template">
           <el-input 
             v-model="form.template" 
             type="textarea" 
@@ -156,7 +156,7 @@
     <el-dialog v-model="fieldDialogVisible" title="配置字段" :width="isMobile ? '95%' : '600px'" :fullscreen="isMobile">
       <div style="margin-bottom: 16px;">
         <el-alert type="info" :closable="false">
-          选择此配置使用的字段，推送时将根据这些字段生成表单
+          选择此配置使用的字段，执行时将根据这些字段生成表单
         </el-alert>
       </div>
       
@@ -178,8 +178,8 @@
       </template>
     </el-dialog>
     
-    <!-- 测试推送对话框 -->
-    <el-dialog v-model="testDialogVisible" title="测试推送" :width="isMobile ? '95%' : '600px'" :fullscreen="isMobile">
+    <!-- 测试集成对话框 -->
+    <el-dialog v-model="testDialogVisible" title="测试集成" :width="isMobile ? '95%' : '600px'" :fullscreen="isMobile">
       <div v-if="testFields.length > 0">
         <el-form :model="testFormData" label-width="100px">
           <el-form-item 
@@ -289,9 +289,9 @@ const form = reactive<PushConfig>({
 
 const rules: FormRules = {
   name: [{ required: true, message: '请输入配置名称', trigger: 'blur' }],
-  url: [{ required: true, message: '请输入推送URL', trigger: 'blur' }],
+  url: [{ required: true, message: '请输入集成URL', trigger: 'blur' }],
   method: [{ required: true, message: '请选择请求方法', trigger: 'change' }],
-  template: [{ required: true, message: '请输入推送模板', trigger: 'blur' }]
+  template: [{ required: true, message: '请输入请求模板', trigger: 'blur' }]
 }
 
 const loadConfigs = async () => {
@@ -430,10 +430,10 @@ const handleTestSubmit = async () => {
   testing.value = true
   try {
     await sendPush({ config_id: testConfigId.value!, data: testFormData })
-    ElMessage.success('推送成功')
+    ElMessage.success('集成成功')
     testDialogVisible.value = false
   } catch (error: any) {
-    console.error('推送失败:', error)
+    console.error('集成失败:', error)
   } finally {
     testing.value = false
   }
