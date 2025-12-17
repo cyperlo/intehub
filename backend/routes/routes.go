@@ -78,6 +78,20 @@ func SetupRoutes(r *gin.Engine) {
 				// 任务执行日志
 				schedule.GET("/logs", controllers.GetScheduleLogs)
 			}
+
+			// 应用平台
+			apps := authorized.Group("/apps")
+			{
+				apps.GET("", controllers.GetApps)
+				apps.GET("/:id", controllers.GetApp)
+				apps.POST("", controllers.CreateApp)
+				apps.PUT("/:id", controllers.UpdateApp)
+				apps.DELETE("/:id", controllers.DeleteApp)
+				apps.POST("/:id/run", controllers.RunApp)
+
+				// 应用执行日志
+				apps.GET("/logs", controllers.GetAppLogs)
+			}
 		}
 	}
 

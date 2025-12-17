@@ -27,6 +27,8 @@ func main() {
 		&models.Menu{},
 		&models.ScheduleTask{},
 		&models.ScheduleLog{},
+		&models.App{},
+		&models.AppLog{},
 	); err != nil {
 		log.Fatal("数据库迁移失败:", err)
 	}

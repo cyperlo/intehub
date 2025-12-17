@@ -56,6 +56,8 @@ func executeTask(task models.ScheduleTask) {
 	switch task.TaskType {
 	case "push":
 		message, err = executePushTask(task.ConfigID, task.FieldData)
+	case "app":
+		message, err = executeAppTask(task.AppID)
 	default:
 		message = "未知的任务类型"
 		err = nil
@@ -327,4 +329,13 @@ func ToggleScheduleTask(c *gin.Context) {
 	InitScheduler()
 
 	c.JSON(http.StatusOK, task)
+}
+
+// executeAppTask 执行应用任务
+func executeAppTask(appID uint) (string, error) {
+	log, err := RunAppInternal(appID)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("应用执行成功，耗时: %dms", log.Duration), nil
 }

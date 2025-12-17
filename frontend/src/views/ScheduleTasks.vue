@@ -99,17 +99,28 @@
           </div>
         </el-form-item>
         <el-form-item label="任务类型" prop="task_type">
-          <el-select v-model="form.task_type">
-            <el-option label="推送任务" value="push" />
+          <el-select v-model="form.task_type" @change="handleTaskTypeChange">
+            <el-option label="集成任务" value="push" />
+            <el-option label="应用任务" value="app" />
           </el-select>
         </el-form-item>
-        <el-form-item label="关联配置" prop="config_id">
-          <el-select v-model="form.config_id" placeholder="选择推送配置" @change="handleConfigChange">
+        <el-form-item label="关联配置" prop="config_id" v-if="form.task_type === 'push'">
+          <el-select v-model="form.config_id" placeholder="选择集成配置" @change="handleConfigChange">
             <el-option 
               v-for="config in pushConfigs" 
               :key="config.id" 
               :label="config.name" 
               :value="config.id" 
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="关联应用" prop="app_id" v-if="form.task_type === 'app'">
+          <el-select v-model="form.app_id" placeholder="选择应用">
+            <el-option 
+              v-for="app in appList" 
+              :key="app.id" 
+              :label="app.name" 
+              :value="app.id" 
             />
           </el-select>
         </el-form-item>
@@ -244,12 +255,16 @@ const currentLogTaskId = ref<number>()
 const configFields = ref<any[]>([])
 const fieldDataForm = reactive<Record<string, any>>({})
 
+// 应用列表
+const appList = ref<any[]>([])
+
 const form = reactive<ScheduleTask>({
   name: '',
   description: '',
   cron_expr: '',
   task_type: 'push',
   config_id: 0,
+  app_id: 0,
   enabled: false
 })
 
@@ -259,7 +274,30 @@ const rules: FormRules = {
   name: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
   cron_expr: [{ required: true, message: '请输入Cron表达式', trigger: 'blur' }],
   task_type: [{ required: true, message: '请选择任务类型', trigger: 'change' }],
-  config_id: [{ required: true, message: '请选择关联配置', trigger: 'change' }]
+  config_id: [
+    { 
+      validator: (rule, value, callback) => {
+        if (form.task_type === 'push' && !value) {
+          callback(new Error('请选择集成配置'))
+        } else {
+          callback()
+        }
+      }, 
+      trigger: 'change' 
+    }
+  ],
+  app_id: [
+    { 
+      validator: (rule, value, callback) => {
+        if (form.task_type === 'app' && !value) {
+          callback(new Error('请选择应用'))
+        } else {
+          callback()
+        }
+      }, 
+      trigger: 'change' 
+    }
+  ]
 }
 
 const formatTime = (time: string | null | undefined) => {
@@ -292,8 +330,25 @@ const loadPushConfigs = async () => {
   try {
     pushConfigs.value = await getPushConfigs()
   } catch (error) {
-    console.error('加载推送配置失败:', error)
+    console.error('加载集成配置失败:', error)
   }
+}
+
+const loadApps = async () => {
+  try {
+    const { getApps } = await import('../api/app')
+    appList.value = await getApps()
+  } catch (error) {
+    console.error('加载应用失败:', error)
+  }
+}
+
+const handleTaskTypeChange = () => {
+  // 切换任务类型时清空相关字段
+  form.config_id = 0
+  form.app_id = 0
+  configFields.value = []
+  Object.keys(fieldDataForm).forEach(key => delete fieldDataForm[key])
 }
 
 const handleConfigChange = async (configId: number) => {
@@ -446,6 +501,7 @@ const resetForm = () => {
     cron_expr: '',
     task_type: 'push',
     config_id: 0,
+    app_id: 0,
     enabled: false
   })
   configFields.value = []
@@ -457,6 +513,7 @@ onMounted(() => {
   window.addEventListener('resize', handleResize)
   loadTasks()
   loadPushConfigs()
+  loadApps()
 })
 
 onUnmounted(() => {

@@ -35,26 +35,33 @@
           <el-icon><DataLine /></el-icon>
           <span>仪表盘</span>
         </el-menu-item>
-        <el-menu-item index="/field-schemas">
-          <el-icon><Grid /></el-icon>
-          <span>字段定义</span>
-        </el-menu-item>
-        <el-menu-item index="/push-configs">
-          <el-icon><Setting /></el-icon>
-          <span>推送配置</span>
-        </el-menu-item>
-        <el-menu-item index="/push-history">
-          <el-icon><List /></el-icon>
-          <span>推送历史</span>
-        </el-menu-item>
+        <el-sub-menu index="/apps-menu">
+          <template #title>
+            <el-icon><Box /></el-icon>
+            <span>应用平台</span>
+          </template>
+          <el-menu-item index="/apps">应用管理</el-menu-item>
+        </el-sub-menu>
+        <el-sub-menu index="/push-menu">
+          <template #title>
+            <el-icon><Promotion /></el-icon>
+            <span>推送平台</span>
+          </template>
+          <el-menu-item index="/push-configs">集成配置</el-menu-item>
+          <el-menu-item index="/push-history">集成历史</el-menu-item>
+        </el-sub-menu>
         <el-menu-item index="/schedule-tasks">
           <el-icon><Clock /></el-icon>
           <span>定时任务</span>
         </el-menu-item>
-        <el-menu-item index="/system/users" v-if="authStore.user?.role === 'admin'">
-          <el-icon><User /></el-icon>
-          <span>用户管理</span>
-        </el-menu-item>
+        <el-sub-menu index="/system" v-if="authStore.user?.role === 'admin'">
+          <template #title>
+            <el-icon><Tools /></el-icon>
+            <span>系统设置</span>
+          </template>
+          <el-menu-item index="/system/users">用户管理</el-menu-item>
+          <el-menu-item index="/system/fields">字段定义</el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </el-drawer>
 
@@ -70,26 +77,33 @@
           <el-icon><DataLine /></el-icon>
           <span>仪表盘</span>
         </el-menu-item>
-        <el-menu-item index="/field-schemas">
-          <el-icon><Grid /></el-icon>
-          <span>字段定义</span>
-        </el-menu-item>
-        <el-menu-item index="/push-configs">
-          <el-icon><Setting /></el-icon>
-          <span>推送配置</span>
-        </el-menu-item>
-        <el-menu-item index="/push-history">
-          <el-icon><List /></el-icon>
-          <span>推送历史</span>
-        </el-menu-item>
+        <el-sub-menu index="/apps-menu">
+          <template #title>
+            <el-icon><Box /></el-icon>
+            <span>应用平台</span>
+          </template>
+          <el-menu-item index="/apps">应用管理</el-menu-item>
+        </el-sub-menu>
+        <el-sub-menu index="/push-menu">
+          <template #title>
+            <el-icon><Promotion /></el-icon>
+            <span>推送平台</span>
+          </template>
+          <el-menu-item index="/push-configs">集成配置</el-menu-item>
+          <el-menu-item index="/push-history">集成历史</el-menu-item>
+        </el-sub-menu>
         <el-menu-item index="/schedule-tasks">
           <el-icon><Clock /></el-icon>
           <span>定时任务</span>
         </el-menu-item>
-        <el-menu-item index="/system/users" v-if="authStore.user?.role === 'admin'">
-          <el-icon><User /></el-icon>
-          <span>用户管理</span>
-        </el-menu-item>
+        <el-sub-menu index="/system" v-if="authStore.user?.role === 'admin'">
+          <template #title>
+            <el-icon><Tools /></el-icon>
+            <span>系统设置</span>
+          </template>
+          <el-menu-item index="/system/users">用户管理</el-menu-item>
+          <el-menu-item index="/system/fields">字段定义</el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </el-aside>
     
@@ -204,6 +218,31 @@ const handleLogout = async () => {
 .el-menu-item:hover,
 .el-menu-item.is-active {
   background-color: #263445 !important;
+  color: #409eff !important;
+}
+
+.el-sub-menu {
+  background-color: #304156;
+}
+
+.el-sub-menu :deep(.el-sub-menu__title) {
+  color: #bfcbd9;
+}
+
+.el-sub-menu :deep(.el-sub-menu__title):hover {
+  background-color: #263445 !important;
+  color: #409eff !important;
+}
+
+.el-sub-menu :deep(.el-menu-item) {
+  background-color: #1f2d3d !important;
+  color: #bfcbd9;
+  padding-left: 50px !important;
+}
+
+.el-sub-menu :deep(.el-menu-item):hover,
+.el-sub-menu :deep(.el-menu-item.is-active) {
+  background-color: #001528 !important;
   color: #409eff !important;
 }
 

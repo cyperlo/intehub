@@ -9,16 +9,17 @@ import (
 // ScheduleTask 定时任务
 type ScheduleTask struct {
 	ID          uint           `gorm:"primarykey" json:"id"`
-	Name        string         `gorm:"not null" json:"name"`            // 任务名称
-	Description string         `json:"description"`                     // 任务描述
-	CronExpr    string         `gorm:"not null" json:"cron_expr"`       // Cron表达式
-	TaskType    string         `gorm:"not null" json:"task_type"`       // 任务类型：push（推送）
-	ConfigID    uint           `gorm:"not null;index" json:"config_id"` // 关联的配置ID
-	FieldData   string         `gorm:"type:text" json:"field_data"`     // 字段数据（JSON格式）
-	Enabled     bool           `gorm:"default:false" json:"enabled"`    // 是否启用
-	LastRunAt   *time.Time     `json:"last_run_at"`                     // 上次运行时间
-	NextRunAt   *time.Time     `json:"next_run_at"`                     // 下次运行时间
-	UserID      uint           `gorm:"not null" json:"user_id"`         // 创建者ID
+	Name        string         `gorm:"not null" json:"name"`         // 任务名称
+	Description string         `json:"description"`                  // 任务描述
+	CronExpr    string         `gorm:"not null" json:"cron_expr"`    // Cron表达式
+	TaskType    string         `gorm:"not null" json:"task_type"`    // 任务类型：push（集成）、app（应用）
+	ConfigID    uint           `gorm:"index" json:"config_id"`       // 关联的配置ID（push类型）
+	AppID       uint           `gorm:"index" json:"app_id"`          // 关联的应用ID（app类型）
+	FieldData   string         `gorm:"type:text" json:"field_data"`  // 字段数据（JSON格式）
+	Enabled     bool           `gorm:"default:false" json:"enabled"` // 是否启用
+	LastRunAt   *time.Time     `json:"last_run_at"`                  // 上次运行时间
+	NextRunAt   *time.Time     `json:"next_run_at"`                  // 下次运行时间
+	UserID      uint           `gorm:"not null" json:"user_id"`      // 创建者ID
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`

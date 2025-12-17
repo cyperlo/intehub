@@ -23,22 +23,22 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '仪表盘' }
       },
       {
-        path: '/field-schemas',
-        name: 'FieldSchemas',
-        component: () => import('../views/FieldSchemas.vue'),
-        meta: { title: '字段定义' }
+        path: '/apps',
+        name: 'Apps',
+        component: () => import('../views/Apps.vue'),
+        meta: { title: '应用管理' }
       },
       {
         path: '/push-configs',
         name: 'PushConfigs',
         component: () => import('../views/PushConfigs.vue'),
-        meta: { title: '推送配置' }
+        meta: { title: '集成配置' }
       },
       {
         path: '/push-history',
         name: 'PushHistory',
         component: () => import('../views/PushHistory.vue'),
-        meta: { title: '推送历史' }
+        meta: { title: '集成历史' }
       },
       {
         path: '/schedule-tasks',
@@ -51,6 +51,12 @@ const routes: RouteRecordRaw[] = [
         name: 'SystemUsers',
         component: () => import('../views/system/UserManagement.vue'),
         meta: { title: '用户管理', requiresAdmin: true }
+      },
+      {
+        path: '/system/fields',
+        name: 'SystemFields',
+        component: () => import('../views/FieldSchemas.vue'),
+        meta: { title: '字段定义', requiresAdmin: true }
       }
     ]
   }
