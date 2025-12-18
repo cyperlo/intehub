@@ -1,12 +1,23 @@
+# Binaries
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
 # Backend
 backend/intehub
-backend/*.db
-backend/*.log
-backend/config/local.yaml
+*.db
+*.log
+
+# Config
+config.yaml
+!config.yaml.example
 
 # Frontend
-ui/node_modules
-ui/dist
+ui/node_modules/
+ui/dist/
 ui/.env.local
 ui/.DS_Store
 
@@ -15,7 +26,20 @@ ui/.DS_Store
 .idea/
 *.swp
 *.swo
+*.iml
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Test
+*.test
+*.out
+coverage.out
+
+# Temporary
+tmp/
+temp/
+
+# Wire generated
+**/wire_gen.go
