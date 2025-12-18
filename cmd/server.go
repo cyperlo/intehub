@@ -1,7 +1,7 @@
 package main
 
 import (
-	"intehub/internal/server"
+	"intehub/internal/app/server"
 	"log/slog"
 	"os"
 
