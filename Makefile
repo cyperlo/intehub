@@ -6,7 +6,7 @@ help: ## 显示帮助信息
 
 wire: ## 生成 Wire 依赖注入代码
 	@echo "Generating wire code..."
-	@cd internal/app/server && wire
+	@cd cmd && wire
 	@echo "Wire code generated successfully"
 
 build: wire ## 编译项目

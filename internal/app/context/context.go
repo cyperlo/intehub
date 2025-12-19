@@ -1,4 +1,4 @@
-package server
+package context
 
 import (
 	"intehub/internal/app/api/v1/app"

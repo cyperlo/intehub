@@ -1,0 +1,37 @@
+package router
+
+import (
+	"intehub/internal/app/api/v1/health"
+	"intehub/internal/app/context"
+	"intehub/internal/utils/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+type HttpRouter struct {
+	*gin.Engine
+	appContext    *context.AppContext
+	healthHandler health.Handler
+}
+
+func NewHttpRouter(
+	appContext *context.AppContext,
+	healthHandler health.Handler,
+) *HttpRouter {
+	r := HttpRouter{
+		appContext:    appContext,
+		healthHandler: healthHandler,
+	}
+
+	router := gin.New()
+
+	// router.Use(middleware.AuthMiddleware("test"))
+	router.HandleMethodNotAllowed = true
+	router.NoRoute(http.HandlerNotFound)
+	router.NoMethod(http.HandlerMethodNotAllowed)
+
+	handleAPI(&r, router.Group("/"), nil, nil, nil, nil)
+
+	r.Engine = router
+	return &r
+}

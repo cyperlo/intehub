@@ -1,4 +1,4 @@
-package server
+package cmd
 
 import (
 	"intehub/internal/app/api/v1/app"

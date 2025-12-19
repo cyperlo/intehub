@@ -1,7 +1,7 @@
 package main
 
 import (
-	"intehub/internal/app/server"
+	"intehub/cmd"
 	"log/slog"
 	"os"
 
@@ -17,7 +17,7 @@ func main() {
 	))
 
 	// 创建服务器
-	srv, err := server.NewServer()
+	srv, err := cmd.NewServer()
 	if err != nil {
 		slog.Error("failed to create server", "error", err)
 		panic(err)
