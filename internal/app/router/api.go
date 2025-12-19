@@ -11,9 +11,9 @@ func handleAPI(r *HttpRouter, rg *gin.RouterGroup, lrMw gin.HandlerFunc,
 		r.healthHandler.HandlerHealthAPI(healthGroup)
 	}
 
-	// {
-	// 	// v1
-	// 	v1 := rg.Group("v1")
-
-	// }
+	{
+		// 登录认证模块
+		v1 := rg.Group("/v1")
+		r.authHandler.HandleAuthAPI(v1)
+	}
 }

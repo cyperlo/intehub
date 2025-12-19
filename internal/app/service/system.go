@@ -1,28 +1,28 @@
 package service
 
 import (
-	"intehub/internal/app/model"
+	"intehub/internal/app/models"
 
 	"gorm.io/gorm"
 )
 
 type SystemService interface {
 	// User
-	GetUsers() ([]*model.User, error)
-	GetUser(id uint) (*model.User, error)
-	CreateUser(user *model.User) error
-	UpdateUser(user *model.User) error
+	GetUsers() ([]*models.User, error)
+	GetUser(id uint) (*models.User, error)
+	CreateUser(user *models.User) error
+	UpdateUser(user *models.User) error
 	DeleteUser(id uint) error
 
 	// Menu
-	GetMenus() ([]*model.Menu, error)
-	CreateMenu(menu *model.Menu) error
-	UpdateMenu(menu *model.Menu) error
+	GetMenus() ([]*models.Menu, error)
+	CreateMenu(menu *models.Menu) error
+	UpdateMenu(menu *models.Menu) error
 	DeleteMenu(id uint) error
 
 	// Log
-	GetLogs(page, pageSize int) ([]*model.SystemLog, int64, error)
-	CreateLog(log *model.SystemLog) error
+	GetLogs(page, pageSize int) ([]*models.SystemLog, int64, error)
+	CreateLog(log *models.SystemLog) error
 }
 
 type systemService struct {
@@ -33,59 +33,59 @@ func NewSystemService(db *gorm.DB) SystemService {
 	return &systemService{db: db}
 }
 
-func (s *systemService) GetUsers() ([]*model.User, error) {
-	var users []*model.User
+func (s *systemService) GetUsers() ([]*models.User, error) {
+	var users []*models.User
 	err := s.db.Find(&users).Error
 	return users, err
 }
 
-func (s *systemService) GetUser(id uint) (*model.User, error) {
-	var user model.User
+func (s *systemService) GetUser(id uint) (*models.User, error) {
+	var user models.User
 	err := s.db.First(&user, id).Error
 	return &user, err
 }
 
-func (s *systemService) CreateUser(user *model.User) error {
+func (s *systemService) CreateUser(user *models.User) error {
 	return s.db.Create(user).Error
 }
 
-func (s *systemService) UpdateUser(user *model.User) error {
+func (s *systemService) UpdateUser(user *models.User) error {
 	return s.db.Save(user).Error
 }
 
 func (s *systemService) DeleteUser(id uint) error {
-	return s.db.Delete(&model.User{}, id).Error
+	return s.db.Delete(&models.User{}, id).Error
 }
 
-func (s *systemService) GetMenus() ([]*model.Menu, error) {
-	var menus []*model.Menu
+func (s *systemService) GetMenus() ([]*models.Menu, error) {
+	var menus []*models.Menu
 	err := s.db.Order("sort ASC").Find(&menus).Error
 	return menus, err
 }
 
-func (s *systemService) CreateMenu(menu *model.Menu) error {
+func (s *systemService) CreateMenu(menu *models.Menu) error {
 	return s.db.Create(menu).Error
 }
 
-func (s *systemService) UpdateMenu(menu *model.Menu) error {
+func (s *systemService) UpdateMenu(menu *models.Menu) error {
 	return s.db.Save(menu).Error
 }
 
 func (s *systemService) DeleteMenu(id uint) error {
-	return s.db.Delete(&model.Menu{}, id).Error
+	return s.db.Delete(&models.Menu{}, id).Error
 }
 
-func (s *systemService) GetLogs(page, pageSize int) ([]*model.SystemLog, int64, error) {
-	var logs []*model.SystemLog
+func (s *systemService) GetLogs(page, pageSize int) ([]*models.SystemLog, int64, error) {
+	var logs []*models.SystemLog
 	var total int64
 
-	s.db.Model(&model.SystemLog{}).Count(&total)
+	s.db.Model(&models.SystemLog{}).Count(&total)
 	offset := (page - 1) * pageSize
 	err := s.db.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&logs).Error
 
 	return logs, total, err
 }
 
-func (s *systemService) CreateLog(log *model.SystemLog) error {
+func (s *systemService) CreateLog(log *models.SystemLog) error {
 	return s.db.Create(log).Error
 }

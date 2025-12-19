@@ -2,13 +2,13 @@ package cmd
 
 import (
 	"intehub/internal/app/api/v1/app"
-	"intehub/internal/app/api/v1/auth"
+	// "intehub/internal/app/api/v1/auth"
 	"intehub/internal/app/api/v1/field"
 	"intehub/internal/app/api/v1/push"
 	"intehub/internal/app/api/v1/schedule"
 	"intehub/internal/app/api/v1/system"
 	"intehub/internal/app/config"
-	"intehub/internal/app/model"
+	"intehub/internal/app/models"
 	"intehub/internal/app/service"
 	"log/slog"
 	"time"
@@ -54,17 +54,17 @@ func MustProvidePostgreSQLDB(cfg *config.Config) *gorm.DB {
 
 	// 自动迁移
 	if err := db.AutoMigrate(
-		&model.User{},
-		&model.App{},
-		&model.AppLog{},
-		&model.PushConfig{},
-		&model.PushHistory{},
-		&model.ConfigFieldRelation{},
-		&model.FieldSchema{},
-		&model.ScheduleTask{},
-		&model.ScheduleLog{},
-		&model.SystemLog{},
-		&model.Menu{},
+		&models.User{},
+		&models.App{},
+		&models.AppLog{},
+		&models.PushConfig{},
+		&models.PushHistory{},
+		&models.ConfigFieldRelation{},
+		&models.FieldSchema{},
+		&models.ScheduleTask{},
+		&models.ScheduleLog{},
+		&models.SystemLog{},
+		&models.Menu{},
 	); err != nil {
 		panic(err)
 	}
@@ -74,15 +74,19 @@ func MustProvidePostgreSQLDB(cfg *config.Config) *gorm.DB {
 	return db
 }
 
+func MustProvideModel(db *gorm.DB) models.Model {
+	return models.New(db)
+}
+
 func createDefaultAdmin(db *gorm.DB) {
 	var count int64
-	db.Model(&model.User{}).Count(&count)
+	db.Model(&models.User{}).Count(&count)
 	if count > 0 {
 		return
 	}
 
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
-	admin := &model.User{
+	admin := &models.User{
 		Username: "admin",
 		Nickname: "管理员",
 		Password: string(hashedPassword),
@@ -122,9 +126,9 @@ func ProvideScheduleService(db *gorm.DB) service.ScheduleService {
 }
 
 // Handlers
-func ProvideAuthHandler(authService service.AuthService) *auth.Handler {
-	return auth.NewHandler(authService)
-}
+// func ProvideAuthHandler(authService service.AuthService) *auth.Handler {
+// 	return auth.NewHandler(authService)
+// }
 
 func ProvideAppHandler(appService service.AppService) *app.Handler {
 	return app.NewHandler(appService)

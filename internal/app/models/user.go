@@ -1,4 +1,4 @@
-package model
+package models
 
 import (
 	"time"
@@ -16,6 +16,10 @@ type User struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+func (u *User) TableName() string {
+	return "user"
 }
 
 // HashPassword 加密密码

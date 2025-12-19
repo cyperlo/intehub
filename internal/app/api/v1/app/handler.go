@@ -1,7 +1,7 @@
 package app
 
 import (
-	"intehub/internal/app/model"
+	model "intehub/internal/app/models"
 	"intehub/internal/app/service"
 	"net/http"
 	"strconv"

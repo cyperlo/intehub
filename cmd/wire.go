@@ -8,7 +8,10 @@ import (
 
 	"intehub/internal/app/router"
 
+	"intehub/internal/app/api/v1/auth"
 	"intehub/internal/app/api/v1/health"
+
+	sa "intehub/internal/app/service/auth"
 
 	"github.com/google/wire"
 
@@ -19,13 +22,17 @@ var wireSet = wire.NewSet(
 	// Config & DB
 	MustProvideConfig,
 	MustProvidePostgreSQLDB,
+	MustProvideModel,
 
 	router.NewHttpRouter,
 
 	// routers
 	health.New,
+	auth.New,
 
 	// Services
+	sa.New,
+
 	ProvideAuthService,
 	ProvideAppService,
 	ProvidePushService,
@@ -34,7 +41,7 @@ var wireSet = wire.NewSet(
 	ProvideScheduleService,
 
 	// Handlers
-	ProvideAuthHandler,
+	// ProvideAuthHandler,
 	ProvideAppHandler,
 	ProvidePushHandler,
 	ProvideFieldHandler,

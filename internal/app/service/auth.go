@@ -2,7 +2,7 @@ package service
 
 import (
 	"errors"
-	"intehub/internal/app/model"
+	"intehub/internal/app/models"
 	"intehub/pkg/jwt"
 	"time"
 
@@ -10,8 +10,8 @@ import (
 )
 
 type AuthService interface {
-	Login(username, password string) (string, *model.User, error)
-	GetProfile(userID uint) (*model.User, error)
+	Login(username, password string) (string, *models.User, error)
+	GetProfile(userID uint) (*models.User, error)
 }
 
 type authService struct {
@@ -26,8 +26,8 @@ func NewAuthService(db *gorm.DB, jwtKey string) AuthService {
 	}
 }
 
-func (s *authService) Login(username, password string) (string, *model.User, error) {
-	var user model.User
+func (s *authService) Login(username, password string) (string, *models.User, error) {
+	var user models.User
 	err := s.db.Where("username = ?", username).First(&user).Error
 	if err != nil {
 		return "", nil, errors.New("用户名或密码错误")
@@ -46,8 +46,8 @@ func (s *authService) Login(username, password string) (string, *model.User, err
 	return token, &user, nil
 }
 
-func (s *authService) GetProfile(userID uint) (*model.User, error) {
-	var user model.User
+func (s *authService) GetProfile(userID uint) (*models.User, error) {
+	var user models.User
 	err := s.db.First(&user, userID).Error
 	if err != nil {
 		return nil, err
