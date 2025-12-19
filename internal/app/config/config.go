@@ -17,4 +17,5 @@ type Config struct {
 	Server     ServerConfig     `mapstructure:"server"`
 	PostgreSQL PostgreSQLConfig `mapstructure:"postgresql"`
 	JWT        JWTConfig        `mapstructure:"jwt"`
+	ApiPrefix  string           `mapstructure:"apiPrefix"`
 }

@@ -8,3 +8,5 @@ postgresql:
 
 jwt:
   secret: "your-secret-key-change-in-production"
+
+apiPrefix: "/api"

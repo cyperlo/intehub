@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	ac "intehub/internal/app/context"
 	"intehub/pkg/jwt"
 	"log/slog"
@@ -21,6 +22,10 @@ func (s *service) Login(ctx context.Context, username, password string) (*LoginR
 	if err != nil {
 		slog.Error(err.Error())
 		return nil, err
+	}
+
+	if !user.CheckPassword(password) {
+		return nil, errors.New("密码错误")
 	}
 	// 生成JWT token
 	token, err := jwt.GenerateToken(user.ID, user.Username, user.Role, appCtx.Config.JWT.Secret, 24*time.Hour)

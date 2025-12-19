@@ -32,12 +32,14 @@ func NewHttpRouter(
 
 	router.Use(middleware.InitAppContext(appContext))
 
+	routerPrefix := appContext.Config.ApiPrefix
+
 	// router.Use(middleware.AuthMiddleware("test"))
 	router.HandleMethodNotAllowed = true
 	router.NoRoute(http.HandlerNotFound)
 	router.NoMethod(http.HandlerMethodNotAllowed)
 
-	handleAPI(&r, router.Group("/"), nil, nil, nil, nil)
+	handleAPI(&r, router.Group(routerPrefix), nil, nil, nil, nil)
 
 	r.Engine = router
 	return &r

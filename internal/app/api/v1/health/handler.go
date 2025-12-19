@@ -15,7 +15,7 @@ type handler struct {
 
 func (h *handler) HandlerHealthAPI(r *gin.RouterGroup) {
 	j := http.NewJSONHandler(r)
-	j.GET("/", h.HealthCheck)
+	j.GET("", h.HealthCheck)
 }
 
 func (h *handler) HealthCheck(ctx *gin.Context) (interface{}, error) {
