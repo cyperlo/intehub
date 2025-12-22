@@ -1,101 +1,96 @@
 package schedule
 
 import (
-	model "intehub/internal/app/models"
-	"intehub/internal/app/service"
-	"net/http"
+	"errors"
+	scheduleModel "intehub/internal/app/models/schedule"
+	scheduleService "intehub/internal/app/service/schedule"
+	httputil "intehub/internal/utils/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	scheduleService service.ScheduleService
+	scheduleService scheduleService.Service
 }
 
-func NewHandler(scheduleService service.ScheduleService) *Handler {
+func NewHandler(scheduleService scheduleService.Service) *Handler {
 	return &Handler{scheduleService: scheduleService}
 }
 
-func (h *Handler) ListTasks(c *gin.Context) {
+func (h *Handler) ListTasks(c *gin.Context) (interface{}, error) {
 	userID, _ := c.Get("user_id")
 	role, _ := c.Get("role")
 
 	var uid uint
-	if role != "admin" {
+	if role != "admin" && userID != nil {
 		uid = userID.(uint)
 	}
 
 	tasks, err := h.scheduleService.GetTasks(uid)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
-	c.JSON(http.StatusOK, tasks)
+	return tasks, nil
 }
 
-func (h *Handler) GetTask(c *gin.Context) {
+func (h *Handler) GetTask(c *gin.Context) (interface{}, error) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 32)
 	task, err := h.scheduleService.GetTask(uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "任务不存在"})
-		return
+		return nil, errors.New("任务不存在")
 	}
-	c.JSON(http.StatusOK, task)
+	return task, nil
 }
 
-func (h *Handler) CreateTask(c *gin.Context) {
-	var task model.ScheduleTask
+func (h *Handler) CreateTask(c *gin.Context) (interface{}, error) {
+	var task scheduleModel.ScheduleTask
 	if err := c.ShouldBindJSON(&task); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return nil, errors.New("参数错误")
 	}
 
-	userID, _ := c.Get("user_id")
-	task.UserID = userID.(uint)
+	userID, exists := c.Get("user_id")
+	if exists && userID != nil {
+		task.UserID = userID.(uint)
+	}
 
 	if err := h.scheduleService.CreateTask(&task); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
-	c.JSON(http.StatusOK, task)
+	return task, nil
 }
 
-func (h *Handler) UpdateTask(c *gin.Context) {
+func (h *Handler) UpdateTask(c *gin.Context) (interface{}, error) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 32)
-	var task model.ScheduleTask
+	var task scheduleModel.ScheduleTask
 	if err := c.ShouldBindJSON(&task); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return nil, errors.New("参数错误")
 	}
 
 	task.ID = uint(id)
 	if err := h.scheduleService.UpdateTask(&task); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
-	c.JSON(http.StatusOK, task)
+	return task, nil
 }
 
-func (h *Handler) DeleteTask(c *gin.Context) {
+func (h *Handler) DeleteTask(c *gin.Context) (interface{}, error) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err := h.scheduleService.DeleteTask(uint(id)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "删除成功"})
+	return gin.H{"message": "删除成功"}, nil
 }
 
-func (h *Handler) ToggleTask(c *gin.Context) {
+func (h *Handler) ToggleTask(c *gin.Context) (interface{}, error) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err := h.scheduleService.ToggleTask(uint(id)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "操作成功"})
+	return gin.H{"message": "操作成功"}, nil
 }
 
-func (h *Handler) GetLogs(c *gin.Context) {
+func (h *Handler) GetLogs(c *gin.Context) (interface{}, error) {
 	var taskID *uint
 	if id := c.Query("task_id"); id != "" {
 		if parsed, err := strconv.ParseUint(id, 10, 32); err == nil {
@@ -109,13 +104,24 @@ func (h *Handler) GetLogs(c *gin.Context) {
 
 	logs, total, err := h.scheduleService.GetLogs(taskID, page, pageSize)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	return gin.H{
 		"list":  logs,
 		"total": total,
 		"page":  page,
-	})
+	}, nil
+}
+
+// HandleScheduleAPI 注册路由
+func (h *Handler) HandleScheduleAPI(r *gin.RouterGroup) {
+	j := httputil.NewJSONHandler(r)
+	j.GET("/tasks", h.ListTasks)
+	j.GET("/tasks/:id", h.GetTask)
+	j.POST("/tasks", h.CreateTask)
+	j.PUT("/tasks/:id", h.UpdateTask)
+	j.DELETE("/tasks/:id", h.DeleteTask)
+	j.POST("/tasks/:id/toggle", h.ToggleTask)
+	j.GET("/logs", h.GetLogs)
 }

@@ -2,14 +2,31 @@ package cmd
 
 import (
 	"intehub/internal/app/api/v1/app"
-	// "intehub/internal/app/api/v1/auth"
+	appModel "intehub/internal/app/models/app"
+	appService "intehub/internal/app/service/app"
+
+	authService "intehub/internal/app/service/auth"
+
 	"intehub/internal/app/api/v1/field"
+	fieldModel "intehub/internal/app/models/field"
+	fieldService "intehub/internal/app/service/field"
+
 	"intehub/internal/app/api/v1/push"
+	pushModel "intehub/internal/app/models/push"
+	pushService "intehub/internal/app/service/push"
+
 	"intehub/internal/app/api/v1/schedule"
+	scheduleModel "intehub/internal/app/models/schedule"
+	scheduleService "intehub/internal/app/service/schedule"
+
 	"intehub/internal/app/api/v1/system"
+	systemModel "intehub/internal/app/models/system"
+	systemService "intehub/internal/app/service/system"
+
+	userModel "intehub/internal/app/models/user"
+
 	"intehub/internal/app/config"
 	"intehub/internal/app/models"
-	"intehub/internal/app/service"
 	"log/slog"
 	"time"
 
@@ -54,17 +71,17 @@ func MustProvidePostgreSQLDB(cfg *config.Config) *gorm.DB {
 
 	// 自动迁移
 	if err := db.AutoMigrate(
-		&models.User{},
-		&models.App{},
-		&models.AppLog{},
-		&models.PushConfig{},
-		&models.PushHistory{},
-		&models.ConfigFieldRelation{},
-		&models.FieldSchema{},
-		&models.ScheduleTask{},
-		&models.ScheduleLog{},
-		&models.SystemLog{},
-		&models.Menu{},
+		&userModel.DataObject{},
+		&appModel.App{},
+		&appModel.AppLog{},
+		&fieldModel.FieldSchema{},
+		&pushModel.PushConfig{},
+		&pushModel.PushHistory{},
+		&pushModel.ConfigFieldRelation{},
+		&scheduleModel.ScheduleTask{},
+		&scheduleModel.ScheduleLog{},
+		&systemModel.SystemLog{},
+		&systemModel.Menu{},
 	); err != nil {
 		panic(err)
 	}
@@ -80,13 +97,13 @@ func MustProvideModel(db *gorm.DB) models.Model {
 
 func createDefaultAdmin(db *gorm.DB) {
 	var count int64
-	db.Model(&models.User{}).Count(&count)
+	db.Model(&userModel.DataObject{}).Count(&count)
 	if count > 0 {
 		return
 	}
 
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
-	admin := &models.User{
+	admin := &userModel.DataObject{
 		Username: "admin",
 		Nickname: "管理员",
 		Password: string(hashedPassword),
@@ -101,51 +118,47 @@ func createDefaultAdmin(db *gorm.DB) {
 }
 
 // Services
-func ProvideAuthService(db *gorm.DB, cfg *config.Config) service.AuthService {
-	return service.NewAuthService(db, cfg.JWT.Secret)
+func ProvideAuthService(model models.Model) authService.Service {
+	return authService.New(model.UserModel())
 }
 
-func ProvideAppService(db *gorm.DB) service.AppService {
-	return service.NewAppService(db)
+func ProvideAppService(model models.Model) appService.Service {
+	return appService.New(model.AppModel())
 }
 
-func ProvidePushService(db *gorm.DB) service.PushService {
-	return service.NewPushService(db)
+func ProvideFieldService(model models.Model) fieldService.Service {
+	return fieldService.New(model.FieldModel())
 }
 
-func ProvideFieldService(db *gorm.DB) service.FieldService {
-	return service.NewFieldService(db)
+func ProvidePushService(model models.Model) pushService.Service {
+	return pushService.New(model.PushModel())
 }
 
-func ProvideSystemService(db *gorm.DB) service.SystemService {
-	return service.NewSystemService(db)
+func ProvideScheduleService(model models.Model) scheduleService.Service {
+	return scheduleService.New(model.ScheduleModel())
 }
 
-func ProvideScheduleService(db *gorm.DB) service.ScheduleService {
-	return service.NewScheduleService(db)
+func ProvideSystemService(model models.Model) systemService.Service {
+	return systemService.New(model.SystemModel())
 }
 
 // Handlers
-// func ProvideAuthHandler(authService service.AuthService) *auth.Handler {
-// 	return auth.NewHandler(authService)
-// }
-
-func ProvideAppHandler(appService service.AppService) *app.Handler {
+func ProvideAppHandler(appService appService.Service) *app.Handler {
 	return app.NewHandler(appService)
 }
 
-func ProvidePushHandler(pushService service.PushService) *push.Handler {
-	return push.NewHandler(pushService)
-}
-
-func ProvideFieldHandler(fieldService service.FieldService) *field.Handler {
+func ProvideFieldHandler(fieldService fieldService.Service) *field.Handler {
 	return field.NewHandler(fieldService)
 }
 
-func ProvideSystemHandler(systemService service.SystemService) *system.Handler {
-	return system.NewHandler(systemService)
+func ProvidePushHandler(pushService pushService.Service) *push.Handler {
+	return push.NewHandler(pushService)
 }
 
-func ProvideScheduleHandler(scheduleService service.ScheduleService) *schedule.Handler {
+func ProvideScheduleHandler(scheduleService scheduleService.Service) *schedule.Handler {
 	return schedule.NewHandler(scheduleService)
+}
+
+func ProvideSystemHandler(systemService systemService.Service) *system.Handler {
+	return system.NewHandler(systemService)
 }

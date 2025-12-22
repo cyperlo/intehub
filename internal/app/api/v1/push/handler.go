@@ -1,109 +1,103 @@
 package push
 
 import (
-	model "intehub/internal/app/models"
-	"intehub/internal/app/service"
-	"net/http"
+	"errors"
+	pushModel "intehub/internal/app/models/push"
+	pushService "intehub/internal/app/service/push"
+	httputil "intehub/internal/utils/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	pushService service.PushService
+	pushService pushService.Service
 }
 
-func NewHandler(pushService service.PushService) *Handler {
+func NewHandler(pushService pushService.Service) *Handler {
 	return &Handler{pushService: pushService}
 }
 
-func (h *Handler) ListConfigs(c *gin.Context) {
+func (h *Handler) ListConfigs(c *gin.Context) (interface{}, error) {
 	userID, _ := c.Get("user_id")
 	role, _ := c.Get("role")
 
 	var uid uint
-	if role != "admin" {
+	if role != "admin" && userID != nil {
 		uid = userID.(uint)
 	}
 
 	configs, err := h.pushService.GetConfigs(uid)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
-	c.JSON(http.StatusOK, configs)
+	return configs, nil
 }
 
-func (h *Handler) GetConfig(c *gin.Context) {
+func (h *Handler) GetConfig(c *gin.Context) (interface{}, error) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 32)
 	config, err := h.pushService.GetConfig(uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "配置不存在"})
-		return
+		return nil, errors.New("配置不存在")
 	}
-	c.JSON(http.StatusOK, config)
+	return config, nil
 }
 
-func (h *Handler) CreateConfig(c *gin.Context) {
-	var config model.PushConfig
+func (h *Handler) CreateConfig(c *gin.Context) (interface{}, error) {
+	var config pushModel.PushConfig
 	if err := c.ShouldBindJSON(&config); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return nil, errors.New("参数错误")
 	}
 
-	userID, _ := c.Get("user_id")
-	config.UserID = userID.(uint)
+	userID, exists := c.Get("user_id")
+	if exists && userID != nil {
+		config.UserID = userID.(uint)
+	}
 
 	if err := h.pushService.CreateConfig(&config); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
-	c.JSON(http.StatusOK, config)
+	return config, nil
 }
 
-func (h *Handler) UpdateConfig(c *gin.Context) {
+func (h *Handler) UpdateConfig(c *gin.Context) (interface{}, error) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 32)
-	var config model.PushConfig
+	var config pushModel.PushConfig
 	if err := c.ShouldBindJSON(&config); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return nil, errors.New("参数错误")
 	}
 
 	config.ID = uint(id)
 	if err := h.pushService.UpdateConfig(&config); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
-	c.JSON(http.StatusOK, config)
+	return config, nil
 }
 
-func (h *Handler) DeleteConfig(c *gin.Context) {
+func (h *Handler) DeleteConfig(c *gin.Context) (interface{}, error) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err := h.pushService.DeleteConfig(uint(id)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "删除成功"})
+	return gin.H{"message": "删除成功"}, nil
 }
 
-func (h *Handler) Send(c *gin.Context) {
+func (h *Handler) Send(c *gin.Context) (interface{}, error) {
 	var req struct {
 		ConfigID uint                   `json:"config_id"`
 		Data     map[string]interface{} `json:"data"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return nil, errors.New("参数错误")
 	}
 
 	if err := h.pushService.Send(req.ConfigID, req.Data); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "发送成功"})
+	return gin.H{"message": "发送成功"}, nil
 }
 
-func (h *Handler) GetHistory(c *gin.Context) {
+func (h *Handler) GetHistory(c *gin.Context) (interface{}, error) {
 	var configID *uint
 	if id := c.Query("config_id"); id != "" {
 		if parsed, err := strconv.ParseUint(id, 10, 32); err == nil {
@@ -117,41 +111,51 @@ func (h *Handler) GetHistory(c *gin.Context) {
 
 	history, total, err := h.pushService.GetHistory(configID, page, pageSize)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	return gin.H{
 		"data":      history,
 		"total":     total,
 		"page":      page,
 		"page_size": pageSize,
-	})
+	}, nil
 }
 
-func (h *Handler) GetConfigFields(c *gin.Context) {
+func (h *Handler) GetConfigFields(c *gin.Context) (interface{}, error) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 32)
 	fields, err := h.pushService.GetConfigFields(uint(id))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
-	c.JSON(http.StatusOK, fields)
+	return fields, nil
 }
 
-func (h *Handler) UpdateConfigFields(c *gin.Context) {
+func (h *Handler) UpdateConfigFields(c *gin.Context) (interface{}, error) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 32)
 	var req struct {
 		FieldIDs []uint `json:"field_ids"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return nil, errors.New("参数错误")
 	}
 
 	if err := h.pushService.UpdateConfigFields(uint(id), req.FieldIDs); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "更新成功"})
+	return gin.H{"message": "更新成功"}, nil
+}
+
+// HandlePushAPI 注册路由
+func (h *Handler) HandlePushAPI(r *gin.RouterGroup) {
+	j := httputil.NewJSONHandler(r)
+	j.GET("/configs", h.ListConfigs)
+	j.GET("/configs/:id", h.GetConfig)
+	j.POST("/configs", h.CreateConfig)
+	j.PUT("/configs/:id", h.UpdateConfig)
+	j.DELETE("/configs/:id", h.DeleteConfig)
+	j.POST("/send", h.Send)
+	j.GET("/history", h.GetHistory)
+	j.GET("/configs/:id/fields", h.GetConfigFields)
+	j.PUT("/configs/:id/fields", h.UpdateConfigFields)
 }

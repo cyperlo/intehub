@@ -4,9 +4,21 @@ import type { User } from '../types'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string>(localStorage.getItem('token') || '')
-  const user = ref<User | null>(
-    localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null
-  )
+  
+  // 安全地解析 user 数据
+  const getUserFromStorage = (): User | null => {
+    try {
+      const userStr = localStorage.getItem('user')
+      if (!userStr) return null
+      return JSON.parse(userStr)
+    } catch (error) {
+      console.error('Failed to parse user from localStorage:', error)
+      localStorage.removeItem('user')
+      return null
+    }
+  }
+  
+  const user = ref<User | null>(getUserFromStorage())
 
   const isAuthenticated = computed(() => !!token.value)
 

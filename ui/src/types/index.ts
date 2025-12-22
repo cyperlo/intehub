@@ -1,3 +1,11 @@
+// 统一API响应格式
+export interface ApiResponse<T = any> {
+  code: number
+  message: string
+  detail?: string
+  data?: T
+}
+
 export interface User {
   id: number
   username: string

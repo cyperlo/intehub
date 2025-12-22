@@ -2,13 +2,9 @@ package context
 
 import (
 	"context"
-	"intehub/internal/app/api/v1/app"
 
 	// "intehub/internal/app/api/v1/auth"
-	"intehub/internal/app/api/v1/field"
-	"intehub/internal/app/api/v1/push"
-	"intehub/internal/app/api/v1/schedule"
-	"intehub/internal/app/api/v1/system"
+
 	"intehub/internal/app/config"
 	"intehub/internal/app/models"
 	"intehub/internal/utils/const/request"
@@ -22,14 +18,6 @@ type AppContext struct {
 	Config *config.Config
 	DB     *gorm.DB
 	Model  models.Model
-
-	// Handlers
-	// AuthHandler     *auth.Handler
-	AppHandler      *app.Handler
-	PushHandler     *push.Handler
-	FieldHandler    *field.Handler
-	SystemHandler   *system.Handler
-	ScheduleHandler *schedule.Handler
 }
 
 var ErrAppContextNotSet = errors.New("App Context not set")

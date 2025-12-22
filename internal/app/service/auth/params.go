@@ -6,6 +6,6 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token string      `json:"token"`
-	User  interface{} `json:"user"`
+	Token    string      `json:"token"`
+	UserInfo interface{} `json:"user_info"`
 }

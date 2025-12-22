@@ -1,137 +1,128 @@
 package app
 
 import (
-	model "intehub/internal/app/models"
-	"intehub/internal/app/service"
-	"net/http"
+	"errors"
+	appModel "intehub/internal/app/models/app"
+	appService "intehub/internal/app/service/app"
+	httputil "intehub/internal/utils/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	appService service.AppService
+	appService appService.Service
 }
 
-func NewHandler(appService service.AppService) *Handler {
+func NewHandler(appService appService.Service) *Handler {
 	return &Handler{
 		appService: appService,
 	}
 }
 
 // List 获取应用列表
-func (h *Handler) List(c *gin.Context) {
+func (h *Handler) List(c *gin.Context) (interface{}, error) {
 	userID, _ := c.Get("user_id")
 	role, _ := c.Get("role")
 
 	var uid uint
-	if role != "admin" {
+	if role != "admin" && userID != nil {
 		uid = userID.(uint)
 	}
 
 	apps, err := h.appService.List(uid)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
 
-	c.JSON(http.StatusOK, apps)
+	return apps, nil
 }
 
 // Get 获取应用详情
-func (h *Handler) Get(c *gin.Context) {
+func (h *Handler) Get(c *gin.Context) (interface{}, error) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的ID"})
-		return
+		return nil, errors.New("无效的ID")
 	}
 
 	app, err := h.appService.GetByID(uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "应用不存在"})
-		return
+		return nil, errors.New("应用不存在")
 	}
 
-	c.JSON(http.StatusOK, app)
+	return app, nil
 }
 
 // Create 创建应用
-func (h *Handler) Create(c *gin.Context) {
-	var app model.App
+func (h *Handler) Create(c *gin.Context) (interface{}, error) {
+	var app appModel.App
 	if err := c.ShouldBindJSON(&app); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return nil, errors.New("参数错误")
 	}
 
-	userID, _ := c.Get("user_id")
-	app.UserID = userID.(uint)
+	userID, exists := c.Get("user_id")
+	if exists && userID != nil {
+		app.UserID = userID.(uint)
+	}
 
 	if err := h.appService.Create(&app); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
 
-	c.JSON(http.StatusOK, app)
+	return app, nil
 }
 
 // Update 更新应用
-func (h *Handler) Update(c *gin.Context) {
+func (h *Handler) Update(c *gin.Context) (interface{}, error) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的ID"})
-		return
+		return nil, errors.New("无效的ID")
 	}
 
-	var app model.App
+	var app appModel.App
 	if err := c.ShouldBindJSON(&app); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return nil, errors.New("参数错误")
 	}
 
 	app.ID = uint(id)
 	if err := h.appService.Update(&app); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
 
-	c.JSON(http.StatusOK, app)
+	return app, nil
 }
 
 // Delete 删除应用
-func (h *Handler) Delete(c *gin.Context) {
+func (h *Handler) Delete(c *gin.Context) (interface{}, error) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的ID"})
-		return
+		return nil, errors.New("无效的ID")
 	}
 
 	if err := h.appService.Delete(uint(id)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "删除成功"})
+	return gin.H{"message": "删除成功"}, nil
 }
 
 // Run 运行应用
-func (h *Handler) Run(c *gin.Context) {
+func (h *Handler) Run(c *gin.Context) (interface{}, error) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的ID"})
-		return
+		return nil, errors.New("无效的ID")
 	}
 
 	log, err := h.appService.Run(uint(id))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
 
-	c.JSON(http.StatusOK, log)
+	return log, nil
 }
 
 // GetLogs 获取应用日志
-func (h *Handler) GetLogs(c *gin.Context) {
+func (h *Handler) GetLogs(c *gin.Context) (interface{}, error) {
 	var appID *uint
 	if id := c.Query("app_id"); id != "" {
 		if parsed, err := strconv.ParseUint(id, 10, 32); err == nil {
@@ -145,13 +136,24 @@ func (h *Handler) GetLogs(c *gin.Context) {
 
 	logs, total, err := h.appService.GetLogs(appID, page, pageSize)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	return gin.H{
 		"list":  logs,
 		"total": total,
 		"page":  page,
-	})
+	}, nil
+}
+
+// HandleAppAPI 注册路由
+func (h *Handler) HandleAppAPI(r *gin.RouterGroup) {
+	j := httputil.NewJSONHandler(r)
+	j.GET("", h.List)
+	j.GET("/:id", h.Get)
+	j.POST("", h.Create)
+	j.PUT("/:id", h.Update)
+	j.DELETE("/:id", h.Delete)
+	j.POST("/:id/run", h.Run)
+	j.GET("/logs", h.GetLogs)
 }

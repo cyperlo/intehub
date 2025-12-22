@@ -11,8 +11,6 @@ import (
 	"intehub/internal/app/api/v1/auth"
 	"intehub/internal/app/api/v1/health"
 
-	sa "intehub/internal/app/service/auth"
-
 	"github.com/google/wire"
 
 	"intehub/internal/app"
@@ -31,17 +29,14 @@ var wireSet = wire.NewSet(
 	auth.New,
 
 	// Services
-	sa.New,
-
 	ProvideAuthService,
 	ProvideAppService,
-	ProvidePushService,
 	ProvideFieldService,
-	ProvideSystemService,
+	ProvidePushService,
 	ProvideScheduleService,
+	ProvideSystemService,
 
 	// Handlers
-	// ProvideAuthHandler,
 	ProvideAppHandler,
 	ProvidePushHandler,
 	ProvideFieldHandler,

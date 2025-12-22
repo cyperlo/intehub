@@ -1,8 +1,13 @@
 package router
 
 import (
+	"intehub/internal/app/api/v1/app"
 	"intehub/internal/app/api/v1/auth"
+	"intehub/internal/app/api/v1/field"
 	"intehub/internal/app/api/v1/health"
+	"intehub/internal/app/api/v1/push"
+	"intehub/internal/app/api/v1/schedule"
+	"intehub/internal/app/api/v1/system"
 	"intehub/internal/app/context"
 	"intehub/internal/app/router/middleware"
 	"intehub/internal/utils/http"
@@ -12,20 +17,35 @@ import (
 
 type HttpRouter struct {
 	*gin.Engine
-	appContext    *context.AppContext
-	healthHandler health.Handler
-	authHandler   auth.Handler
+	appContext      *context.AppContext
+	healthHandler   health.Handler
+	authHandler     auth.Handler
+	appHandler      *app.Handler
+	fieldHandler    *field.Handler
+	pushHandler     *push.Handler
+	scheduleHandler *schedule.Handler
+	systemHandler   *system.Handler
 }
 
 func NewHttpRouter(
 	appContext *context.AppContext,
 	healthHandler health.Handler,
 	authHandler auth.Handler,
+	appHandler *app.Handler,
+	fieldHandler *field.Handler,
+	pushHandler *push.Handler,
+	scheduleHandler *schedule.Handler,
+	systemHandler *system.Handler,
 ) *HttpRouter {
 	r := HttpRouter{
-		appContext:    appContext,
-		healthHandler: healthHandler,
-		authHandler:   authHandler,
+		appContext:      appContext,
+		healthHandler:   healthHandler,
+		authHandler:     authHandler,
+		appHandler:      appHandler,
+		fieldHandler:    fieldHandler,
+		pushHandler:     pushHandler,
+		scheduleHandler: scheduleHandler,
+		systemHandler:   systemHandler,
 	}
 
 	router := gin.New()
