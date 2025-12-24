@@ -42,6 +42,7 @@
           </template>
           <el-menu-item index="/apps">应用管理</el-menu-item>
           <el-menu-item index="/appstore">应用商店</el-menu-item>
+          <el-menu-item index="/workflows">应用流</el-menu-item>
         </el-sub-menu>
         <el-sub-menu index="/push-menu">
           <template #title>
@@ -85,6 +86,7 @@
           </template>
           <el-menu-item index="/apps">应用管理</el-menu-item>
           <el-menu-item index="/appstore">应用商店</el-menu-item>
+          <el-menu-item index="/workflows">应用流</el-menu-item>
         </el-sub-menu>
         <el-sub-menu index="/push-menu">
           <template #title>

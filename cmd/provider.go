@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"intehub/internal/app/api/v1/app"
+	"intehub/internal/app/api/v1/workflow"
 	appModel "intehub/internal/app/models/app"
 	appService "intehub/internal/app/service/app"
 
@@ -26,6 +27,9 @@ import (
 	"intehub/internal/app/api/v1/system"
 	systemModel "intehub/internal/app/models/system"
 	systemService "intehub/internal/app/service/system"
+
+	workflowModel "intehub/internal/app/models/workflow"
+	workflowService "intehub/internal/app/service/workflow"
 
 	userModel "intehub/internal/app/models/user"
 
@@ -88,6 +92,8 @@ func MustProvidePostgreSQLDB(cfg *config.Config) *gorm.DB {
 		&scheduleModel.ScheduleLog{},
 		&systemModel.SystemLog{},
 		&systemModel.Menu{},
+		&workflowModel.Workflow{},
+		&workflowModel.WorkflowLog{},
 	); err != nil {
 		panic(err)
 	}
@@ -152,6 +158,10 @@ func ProvideAppStoreService(model models.Model) *appstoreService.Service {
 	return appstoreService.New(model)
 }
 
+func ProvideWorkflowService(model models.Model, appService appService.Service) workflowService.Service {
+	return workflowService.New(model.WorkflowModel(), appService)
+}
+
 // Handlers
 func ProvideAppHandler(appService appService.Service) *app.Handler {
 	return app.NewHandler(appService)
@@ -175,4 +185,8 @@ func ProvideSystemHandler(systemService systemService.Service) *system.Handler {
 
 func ProvideAppStoreHandler(appstoreService *appstoreService.Service) *appstore.Handler {
 	return appstore.New(appstoreService)
+}
+
+func ProvideWorkflowHandler(workflowService workflowService.Service) *workflow.Handler {
+	return workflow.NewHandler(workflowService)
 }

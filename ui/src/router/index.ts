@@ -35,6 +35,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '应用商店' }
       },
       {
+        path: '/workflows',
+        name: 'Workflows',
+        component: () => import('../views/Workflows.vue'),
+        meta: { title: '应用流' }
+      },
+      {
         path: '/push-configs',
         name: 'PushConfigs',
         component: () => import('../views/PushConfigs.vue'),

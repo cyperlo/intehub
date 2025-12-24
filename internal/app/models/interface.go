@@ -8,6 +8,7 @@ import (
 	"intehub/internal/app/models/schedule"
 	"intehub/internal/app/models/system"
 	"intehub/internal/app/models/user"
+	"intehub/internal/app/models/workflow"
 )
 
 type Model interface {
@@ -18,4 +19,5 @@ type Model interface {
 	PushModel() push.Model
 	ScheduleModel() schedule.Model
 	SystemModel() system.Model
+	WorkflowModel() workflow.Model
 }

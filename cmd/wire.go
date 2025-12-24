@@ -32,6 +32,7 @@ var wireSet = wire.NewSet(
 	ProvideAuthService,
 	ProvideAppService,
 	ProvideAppStoreService,
+	ProvideWorkflowService,
 	ProvideFieldService,
 	ProvidePushService,
 	ProvideScheduleService,
@@ -40,6 +41,7 @@ var wireSet = wire.NewSet(
 	// Handlers
 	ProvideAppHandler,
 	ProvideAppStoreHandler,
+	ProvideWorkflowHandler,
 	ProvidePushHandler,
 	ProvideFieldHandler,
 	ProvideSystemHandler,

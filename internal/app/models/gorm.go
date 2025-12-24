@@ -8,6 +8,7 @@ import (
 	"intehub/internal/app/models/schedule"
 	"intehub/internal/app/models/system"
 	"intehub/internal/app/models/user"
+	"intehub/internal/app/models/workflow"
 
 	"gorm.io/gorm"
 )
@@ -48,4 +49,8 @@ func (g *GormDB) ScheduleModel() schedule.Model {
 
 func (g *GormDB) SystemModel() system.Model {
 	return system.New(g.db)
+}
+
+func (g *GormDB) WorkflowModel() workflow.Model {
+	return workflow.New(g.db)
 }

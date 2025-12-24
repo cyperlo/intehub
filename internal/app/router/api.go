@@ -24,6 +24,10 @@ func handleAPI(r *HttpRouter, rg *gin.RouterGroup) {
 		appstoreGroup := rg.Group("/appstore")
 		r.appstoreHandler.HandleAppStoreAPI(appstoreGroup)
 
+		// 工作流
+		workflowGroup := rg.Group("/workflows")
+		r.workflowHandler.HandleWorkflowAPI(workflowGroup)
+
 		// 字段管理
 		fieldGroup := rg.Group("/fields")
 		r.fieldHandler.HandleFieldAPI(fieldGroup)

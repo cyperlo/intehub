@@ -10,6 +10,7 @@ import (
 	"intehub/internal/app/api/v1/push"
 	"intehub/internal/app/api/v1/schedule"
 	"intehub/internal/app/api/v1/system"
+	"intehub/internal/app/api/v1/workflow"
 	"intehub/internal/app/context"
 	"intehub/internal/app/router/middleware"
 	"intehub/internal/utils/http"
@@ -24,6 +25,7 @@ type HttpRouter struct {
 	authHandler     auth.Handler
 	appHandler      *app.Handler
 	appstoreHandler *appstore.Handler
+	workflowHandler *workflow.Handler
 	fieldHandler    *field.Handler
 	pushHandler     *push.Handler
 	scheduleHandler *schedule.Handler
@@ -36,6 +38,7 @@ func NewHttpRouter(
 	authHandler auth.Handler,
 	appHandler *app.Handler,
 	appstoreHandler *appstore.Handler,
+	workflowHandler *workflow.Handler,
 	fieldHandler *field.Handler,
 	pushHandler *push.Handler,
 	scheduleHandler *schedule.Handler,
@@ -47,6 +50,7 @@ func NewHttpRouter(
 		authHandler:     authHandler,
 		appHandler:      appHandler,
 		appstoreHandler: appstoreHandler,
+		workflowHandler: workflowHandler,
 		fieldHandler:    fieldHandler,
 		pushHandler:     pushHandler,
 		scheduleHandler: scheduleHandler,
