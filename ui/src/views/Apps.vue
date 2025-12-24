@@ -20,7 +20,11 @@
             <el-switch v-model="row.enabled" @change="handleToggleStatus(row)" size="small" />
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180" />
+        <el-table-column label="创建时间" width="180">
+          <template #default="{ row }">
+            {{ formatTime(row.created_at) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="360" fixed="right">
           <template #default="{ row }">
             <el-button type="success" size="small" @click="handleRun(row)" link>
@@ -63,7 +67,7 @@
             </div>
             <div class="info-row">
               <span class="label">创建时间：</span>
-              <span class="value">{{ app.created_at }}</span>
+              <span class="value">{{ formatTime(app.created_at) }}</span>
             </div>
           </div>
           <div class="card-actions">
@@ -155,7 +159,7 @@
               <el-tag :type="log.status === 'success' ? 'success' : 'danger'" size="small">
                 {{ log.status === 'success' ? '成功' : '失败' }}
               </el-tag>
-              <span class="log-time">{{ log.started_at }}</span>
+              <span class="log-time">{{ formatTime(log.started_at) }}</span>
               <span class="log-duration">耗时: {{ log.duration }}ms</span>
             </div>
             <div v-if="log.output" class="log-content">
@@ -483,6 +487,23 @@ const formatOutput = (output: string) => {
   } catch (e) {
     // 解析失败，返回原始内容
     return output
+  }
+}
+
+const formatTime = (time: string | undefined) => {
+  if (!time) return '-'
+  try {
+    const date = new Date(time)
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  } catch (e) {
+    return time
   }
 }
 
