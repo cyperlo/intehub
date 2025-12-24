@@ -75,7 +75,7 @@
     </el-card>
 
     <el-dialog v-model="dialogVisible" :title="dialogTitle" :width="isMobile ? '95%' : '500px'" :fullscreen="isMobile">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
+      <el-form :model="form" :rules="getDynamicRules" ref="formRef" label-width="80px">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="form.username" :disabled="!!currentUserId" />
         </el-form-item>
@@ -88,8 +88,9 @@
             <el-option label="普通用户" value="user" />
           </el-select>
         </el-form-item>
-        <el-form-item label="密码" prop="password">
+        <el-form-item label="密码">
           <el-input v-model="form.password" type="password" :placeholder="currentUserId ? '不修改请留空' : '请输入密码'" />
+          <span v-if="!currentUserId && !form.password" style="color: #f56c6c; font-size: 12px;">请输入密码</span>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -128,23 +129,18 @@ const form = reactive<User>({
   password: ''
 })
 
-const rules: FormRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
-  role: [{ required: true, message: '请选择角色', trigger: 'change' }],
-  password: [
-    { 
-      validator: (rule, value, callback) => {
-        if (!currentUserId.value && !value) {
-          callback(new Error('请输入密码'))
-        } else {
-          callback()
-        }
-      }, 
-      trigger: 'blur' 
-    }
-  ]
-}
+// 动态规则：根据是否编辑模式调整密码验证
+const getDynamicRules = computed(() => {
+  const baseRules: FormRules = {
+    username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+    nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
+    role: [{ required: true, message: '请选择角色', trigger: 'change' }]
+  }
+  
+  // 不在这里验证密码，在提交时手动验证
+  
+  return baseRules
+})
 
 const loadUsers = async () => {
   loading.value = true
@@ -165,8 +161,10 @@ const handleAdd = () => {
 }
 
 const handleEdit = (row: User) => {
+  console.log('编辑用户:', row)
   dialogTitle.value = '编辑用户'
   currentUserId.value = row.id
+  console.log('设置 currentUserId:', currentUserId.value)
   Object.assign(form, { ...row, password: '' })
   dialogVisible.value = true
 }
@@ -174,11 +172,12 @@ const handleEdit = (row: User) => {
 const handleSubmit = async () => {
   if (!formRef.value) return
   
-  await formRef.value.validate(async (valid) => {
+  await formRef.value.validate(async (valid, fields) => {
     if (valid) {
       submitting.value = true
       try {
         if (currentUserId.value) {
+          // 编辑用户
           const updateData: any = {
             nickname: form.nickname,
             role: form.role
@@ -189,6 +188,12 @@ const handleSubmit = async () => {
           await updateUser(currentUserId.value, updateData)
           ElMessage.success('更新成功')
         } else {
+          // 新增用户
+          if (!form.password) {
+            ElMessage.error('请输入密码')
+            submitting.value = false
+            return
+          }
           await createUser(form)
           ElMessage.success('创建成功')
         }

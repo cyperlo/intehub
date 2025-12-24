@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"intehub/internal/app/api/v1/app"
+	"intehub/internal/app/api/v1/appstore"
 	"intehub/internal/app/api/v1/auth"
 	"intehub/internal/app/api/v1/field"
 	"intehub/internal/app/api/v1/health"
@@ -22,6 +23,7 @@ type HttpRouter struct {
 	healthHandler   health.Handler
 	authHandler     auth.Handler
 	appHandler      *app.Handler
+	appstoreHandler *appstore.Handler
 	fieldHandler    *field.Handler
 	pushHandler     *push.Handler
 	scheduleHandler *schedule.Handler
@@ -33,6 +35,7 @@ func NewHttpRouter(
 	healthHandler health.Handler,
 	authHandler auth.Handler,
 	appHandler *app.Handler,
+	appstoreHandler *appstore.Handler,
 	fieldHandler *field.Handler,
 	pushHandler *push.Handler,
 	scheduleHandler *schedule.Handler,
@@ -43,6 +46,7 @@ func NewHttpRouter(
 		healthHandler:   healthHandler,
 		authHandler:     authHandler,
 		appHandler:      appHandler,
+		appstoreHandler: appstoreHandler,
 		fieldHandler:    fieldHandler,
 		pushHandler:     pushHandler,
 		scheduleHandler: scheduleHandler,

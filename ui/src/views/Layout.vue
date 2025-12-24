@@ -41,6 +41,7 @@
             <span>应用平台</span>
           </template>
           <el-menu-item index="/apps">应用管理</el-menu-item>
+          <el-menu-item index="/appstore">应用商店</el-menu-item>
         </el-sub-menu>
         <el-sub-menu index="/push-menu">
           <template #title>
@@ -83,6 +84,7 @@
             <span>应用平台</span>
           </template>
           <el-menu-item index="/apps">应用管理</el-menu-item>
+          <el-menu-item index="/appstore">应用商店</el-menu-item>
         </el-sub-menu>
         <el-sub-menu index="/push-menu">
           <template #title>

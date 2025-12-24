@@ -45,31 +45,54 @@ func (h *Handler) Get(c *gin.Context) (interface{}, error) {
 		return nil, errors.New("无效的ID")
 	}
 
-	app, err := h.appService.GetByID(uint(id))
+	app, configs, err := h.appService.GetByIDWithConfigs(uint(id))
 	if err != nil {
 		return nil, errors.New("应用不存在")
 	}
 
-	return app, nil
+	return gin.H{
+		"app":     app,
+		"configs": configs,
+	}, nil
 }
 
 // Create 创建应用
 func (h *Handler) Create(c *gin.Context) (interface{}, error) {
-	var app appModel.App
-	if err := c.ShouldBindJSON(&app); err != nil {
+	var req struct {
+		appModel.App
+		Configs []struct {
+			Key       string `json:"key"`
+			Value     string `json:"value"`
+			Type      string `json:"type"`
+			Encrypted bool   `json:"encrypted"`
+		} `json:"configs"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
 		return nil, errors.New("参数错误")
 	}
 
 	userID, exists := c.Get("user_id")
 	if exists && userID != nil {
-		app.UserID = userID.(uint)
+		req.App.UserID = userID.(uint)
 	}
 
-	if err := h.appService.Create(&app); err != nil {
+	// 转换配置
+	configs := make([]appService.ConfigInput, len(req.Configs))
+	for i, cfg := range req.Configs {
+		configs[i] = appService.ConfigInput{
+			Key:       cfg.Key,
+			Value:     cfg.Value,
+			Type:      cfg.Type,
+			Encrypted: cfg.Encrypted,
+		}
+	}
+
+	if err := h.appService.CreateWithConfigs(&req.App, configs); err != nil {
 		return nil, err
 	}
 
-	return app, nil
+	return req.App, nil
 }
 
 // Update 更新应用
@@ -79,17 +102,38 @@ func (h *Handler) Update(c *gin.Context) (interface{}, error) {
 		return nil, errors.New("无效的ID")
 	}
 
-	var app appModel.App
-	if err := c.ShouldBindJSON(&app); err != nil {
+	var req struct {
+		appModel.App
+		Configs []struct {
+			Key       string `json:"key"`
+			Value     string `json:"value"`
+			Type      string `json:"type"`
+			Encrypted bool   `json:"encrypted"`
+		} `json:"configs"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
 		return nil, errors.New("参数错误")
 	}
 
-	app.ID = uint(id)
-	if err := h.appService.Update(&app); err != nil {
+	req.App.ID = uint(id)
+
+	// 转换配置
+	configs := make([]appService.ConfigInput, len(req.Configs))
+	for i, cfg := range req.Configs {
+		configs[i] = appService.ConfigInput{
+			Key:       cfg.Key,
+			Value:     cfg.Value,
+			Type:      cfg.Type,
+			Encrypted: cfg.Encrypted,
+		}
+	}
+
+	if err := h.appService.UpdateWithConfigs(&req.App, configs); err != nil {
 		return nil, err
 	}
 
-	return app, nil
+	return req.App, nil
 }
 
 // Delete 删除应用
@@ -113,12 +157,27 @@ func (h *Handler) Run(c *gin.Context) (interface{}, error) {
 		return nil, errors.New("无效的ID")
 	}
 
-	log, err := h.appService.Run(uint(id))
+	// 获取输入参数
+	var input map[string]interface{}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		// 如果没有提供参数，使用空 map
+		input = make(map[string]interface{})
+	}
+
+	log, err := h.appService.RunWithInput(uint(id), input)
 	if err != nil {
 		return nil, err
 	}
 
-	return log, nil
+	// 返回详细的执行结果
+	// 包含日志信息和原始输出，方便前端处理
+	return gin.H{
+		"log":      log,          // 完整的日志对象
+		"status":   log.Status,   // 执行状态
+		"output":   log.Output,   // 输出结果（字符串格式）
+		"error":    log.Error,    // 错误信息
+		"duration": log.Duration, // 执行时长（毫秒）
+	}, nil
 }
 
 // GetLogs 获取应用日志
@@ -146,6 +205,37 @@ func (h *Handler) GetLogs(c *gin.Context) (interface{}, error) {
 	}, nil
 }
 
+// Publish 发布应用到应用商店
+func (h *Handler) Publish(c *gin.Context) (interface{}, error) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		return nil, errors.New("无效的ID")
+	}
+
+	var req struct {
+		DisplayName  string `json:"display_name" binding:"required"`
+		Description  string `json:"description"`
+		Icon         string `json:"icon"`
+		Category     string `json:"category"`
+		Version      string `json:"version" binding:"required"`
+		Author       string `json:"author"`
+		Tags         string `json:"tags"`
+		ConfigSchema string `json:"config_schema"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		return nil, errors.New("参数错误")
+	}
+
+	template, err := h.appService.PublishToStore(uint(id), req.DisplayName, req.Description, req.Icon,
+		req.Category, req.Version, req.Author, req.Tags, req.ConfigSchema)
+	if err != nil {
+		return nil, err
+	}
+
+	return template, nil
+}
+
 // HandleAppAPI 注册路由
 func (h *Handler) HandleAppAPI(r *gin.RouterGroup) {
 	j := httputil.NewJSONHandler(r)
@@ -155,5 +245,6 @@ func (h *Handler) HandleAppAPI(r *gin.RouterGroup) {
 	j.PUT("/:id", h.Update)
 	j.DELETE("/:id", h.Delete)
 	j.POST("/:id/run", h.Run)
+	j.POST("/:id/publish", h.Publish)
 	j.GET("/logs", h.GetLogs)
 }

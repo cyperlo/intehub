@@ -2,6 +2,7 @@ package models
 
 import (
 	"intehub/internal/app/models/app"
+	"intehub/internal/app/models/appstore"
 	"intehub/internal/app/models/field"
 	"intehub/internal/app/models/push"
 	"intehub/internal/app/models/schedule"
@@ -12,6 +13,7 @@ import (
 type Model interface {
 	UserModel() user.Model
 	AppModel() app.Model
+	AppStoreModel() appstore.Model
 	FieldModel() field.Model
 	PushModel() push.Model
 	ScheduleModel() schedule.Model

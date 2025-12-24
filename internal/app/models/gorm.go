@@ -2,6 +2,7 @@ package models
 
 import (
 	"intehub/internal/app/models/app"
+	"intehub/internal/app/models/appstore"
 	"intehub/internal/app/models/field"
 	"intehub/internal/app/models/push"
 	"intehub/internal/app/models/schedule"
@@ -27,6 +28,10 @@ func (g *GormDB) UserModel() user.Model {
 
 func (g *GormDB) AppModel() app.Model {
 	return app.New(g.db)
+}
+
+func (g *GormDB) AppStoreModel() appstore.Model {
+	return appstore.New(g.db)
 }
 
 func (g *GormDB) FieldModel() field.Model {

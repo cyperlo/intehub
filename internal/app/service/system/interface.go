@@ -1,6 +1,9 @@
 package system
 
-import systemModel "intehub/internal/app/models/system"
+import (
+	systemModel "intehub/internal/app/models/system"
+	userModel "intehub/internal/app/models/user"
+)
 
 type Service interface {
 	// Menu methods
@@ -11,4 +14,12 @@ type Service interface {
 
 	// Log methods
 	GetLogs(page, pageSize int) ([]*systemModel.SystemLog, int64, error)
+
+	// User methods
+	GetUsers() ([]*userModel.DataObject, error)
+	GetUserByID(id uint) (*userModel.DataObject, error)
+	CreateUser(user *userModel.DataObject) error
+	UpdateUser(user *userModel.DataObject) error
+	UpdateUserFields(id uint, fields map[string]interface{}) error
+	DeleteUser(id uint) error
 }

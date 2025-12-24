@@ -7,6 +7,10 @@ import (
 
 	authService "intehub/internal/app/service/auth"
 
+	"intehub/internal/app/api/v1/appstore"
+	appstoreModel "intehub/internal/app/models/appstore"
+	appstoreService "intehub/internal/app/service/appstore"
+
 	"intehub/internal/app/api/v1/field"
 	fieldModel "intehub/internal/app/models/field"
 	fieldService "intehub/internal/app/service/field"
@@ -74,6 +78,8 @@ func MustProvidePostgreSQLDB(cfg *config.Config) *gorm.DB {
 		&userModel.DataObject{},
 		&appModel.App{},
 		&appModel.AppLog{},
+		&appstoreModel.AppTemplate{},
+		&appstoreModel.AppConfig{},
 		&fieldModel.FieldSchema{},
 		&pushModel.PushConfig{},
 		&pushModel.PushHistory{},
@@ -123,7 +129,7 @@ func ProvideAuthService(model models.Model) authService.Service {
 }
 
 func ProvideAppService(model models.Model) appService.Service {
-	return appService.New(model.AppModel())
+	return appService.New(model.AppModel(), model.AppStoreModel())
 }
 
 func ProvideFieldService(model models.Model) fieldService.Service {
@@ -139,7 +145,11 @@ func ProvideScheduleService(model models.Model) scheduleService.Service {
 }
 
 func ProvideSystemService(model models.Model) systemService.Service {
-	return systemService.New(model.SystemModel())
+	return systemService.New(model.SystemModel(), model.UserModel())
+}
+
+func ProvideAppStoreService(model models.Model) *appstoreService.Service {
+	return appstoreService.New(model)
 }
 
 // Handlers
@@ -161,4 +171,8 @@ func ProvideScheduleHandler(scheduleService scheduleService.Service) *schedule.H
 
 func ProvideSystemHandler(systemService systemService.Service) *system.Handler {
 	return system.NewHandler(systemService)
+}
+
+func ProvideAppStoreHandler(appstoreService *appstoreService.Service) *appstore.Handler {
+	return appstore.New(appstoreService)
 }

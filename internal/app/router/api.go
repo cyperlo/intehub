@@ -20,6 +20,10 @@ func handleAPI(r *HttpRouter, rg *gin.RouterGroup) {
 		appGroup := rg.Group("/apps")
 		r.appHandler.HandleAppAPI(appGroup)
 
+		// 应用商店
+		appstoreGroup := rg.Group("/appstore")
+		r.appstoreHandler.HandleAppStoreAPI(appstoreGroup)
+
 		// 字段管理
 		fieldGroup := rg.Group("/fields")
 		r.fieldHandler.HandleFieldAPI(fieldGroup)

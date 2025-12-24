@@ -3,11 +3,13 @@ package system
 import (
 	"errors"
 	systemModel "intehub/internal/app/models/system"
+	userModel "intehub/internal/app/models/user"
 	systemService "intehub/internal/app/service/system"
 	httputil "intehub/internal/utils/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Handler struct {
@@ -90,4 +92,112 @@ func (h *Handler) HandleSystemAPI(r *gin.RouterGroup) {
 
 	// Log routes
 	j.GET("/logs", h.GetLogs)
+
+	// User routes
+	j.GET("/users", h.ListUsers)
+	j.POST("/users", h.CreateUser)
+	j.PUT("/users/:id", h.UpdateUser)
+	j.DELETE("/users/:id", h.DeleteUser)
+}
+
+// User handlers
+func (h *Handler) ListUsers(c *gin.Context) (interface{}, error) {
+	users, err := h.systemService.GetUsers()
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func (h *Handler) CreateUser(c *gin.Context) (interface{}, error) {
+	var req struct {
+		Username string `json:"username" binding:"required"`
+		Nickname string `json:"nickname"`
+		Password string `json:"password" binding:"required"`
+		Role     string `json:"role"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		return nil, errors.New("参数错误")
+	}
+
+	// 加密密码
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, errors.New("密码加密失败")
+	}
+
+	user := &userModel.DataObject{
+		Username: req.Username,
+		Nickname: req.Nickname,
+		Password: string(hashedPassword),
+		Role:     req.Role,
+	}
+
+	if user.Role == "" {
+		user.Role = "user"
+	}
+
+	if err := h.systemService.CreateUser(user); err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (h *Handler) UpdateUser(c *gin.Context) (interface{}, error) {
+	id, _ := strconv.ParseUint(c.Param("id"), 10, 32)
+
+	var req struct {
+		Nickname string `json:"nickname"`
+		Password string `json:"password"`
+		Role     string `json:"role"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		return nil, errors.New("参数错误")
+	}
+
+	user, err := h.systemService.GetUserByID(uint(id))
+	if err != nil {
+		return nil, errors.New("用户不存在")
+	}
+
+	// 构建更新字段
+	updates := make(map[string]interface{})
+
+	if req.Nickname != "" {
+		updates["nickname"] = req.Nickname
+		user.Nickname = req.Nickname
+	}
+	if req.Role != "" {
+		updates["role"] = req.Role
+		user.Role = req.Role
+	}
+	if req.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, errors.New("密码加密失败")
+		}
+		updates["password"] = string(hashedPassword)
+		user.Password = string(hashedPassword)
+	}
+
+	if len(updates) == 0 {
+		return user, nil
+	}
+
+	if err := h.systemService.UpdateUserFields(uint(id), updates); err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (h *Handler) DeleteUser(c *gin.Context) (interface{}, error) {
+	id, _ := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err := h.systemService.DeleteUser(uint(id)); err != nil {
+		return nil, err
+	}
+	return gin.H{"message": "删除成功"}, nil
 }

@@ -48,6 +48,10 @@ func (m *model) UpdateUser(user *DataObject) error {
 	return m.db.Save(user).Error
 }
 
+func (m *model) UpdateUserFields(id uint, fields map[string]interface{}) error {
+	return m.db.Model(&DataObject{}).Where("id = ?", id).Updates(fields).Error
+}
+
 func (m *model) DeleteUser(id uint) error {
 	return m.db.Delete(&DataObject{}, id).Error
 }

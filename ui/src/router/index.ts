@@ -29,6 +29,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '应用管理' }
       },
       {
+        path: '/appstore',
+        name: 'AppStore',
+        component: () => import('../views/AppStore.vue'),
+        meta: { title: '应用商店' }
+      },
+      {
         path: '/push-configs',
         name: 'PushConfigs',
         component: () => import('../views/PushConfigs.vue'),
