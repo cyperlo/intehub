@@ -2,9 +2,7 @@ package router
 
 import "github.com/gin-gonic/gin"
 
-func handleAPI(r *HttpRouter, rg *gin.RouterGroup, lrMw gin.HandlerFunc,
-	expireMw gin.HandlerFunc, authKeyMw gin.HandlerFunc, sourceTypeMw gin.HandlerFunc,
-) {
+func handleAPI(r *HttpRouter, rg *gin.RouterGroup) {
 	{
 		// 健康检查
 		healthGroup := rg.Group("/health")
@@ -17,10 +15,6 @@ func handleAPI(r *HttpRouter, rg *gin.RouterGroup, lrMw gin.HandlerFunc,
 		r.authHandler.HandleAuthAPI(authGroup)
 	}
 
-	// 需要鉴权的路由
-	// TODO: 添加认证中间件
-	// authorized := rg.Group("")
-	// authorized.Use(middleware.AuthMiddleware())
 	{
 		// 应用管理
 		appGroup := rg.Group("/apps")

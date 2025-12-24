@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"intehub/pkg/jwt"
 	"net/http"
 	"strings"
@@ -9,8 +10,12 @@ import (
 )
 
 // AuthMiddleware JWT 认证中间件
-func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
+func AuthMiddleware(jwtSecret string, loginRequireConfig LoginRequireConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		urlKey := fmt.Sprintf(LoginRequiredURLFmt, c.Request.Method, c.FullPath())
+		if _, ok := loginRequireConfig.ExcludedPath[urlKey]; ok {
+			return
+		}
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "未提供认证令牌"})

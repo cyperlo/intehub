@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"intehub/internal/app/api/v1/app"
 	"intehub/internal/app/api/v1/auth"
 	"intehub/internal/app/api/v1/field"
@@ -54,12 +55,22 @@ func NewHttpRouter(
 
 	routerPrefix := appContext.Config.ApiPrefix
 
-	// router.Use(middleware.AuthMiddleware("test"))
+	loginRequireConfig := middleware.LoginRequireConfig{
+		ExcludedPath: map[string]struct{}{
+			fmt.Sprintf(middleware.LoginRequiredURLFmt, "POST",
+				routerPrefix+"/v1/auth/login"): {},
+		},
+	}
+
+	router.Use(middleware.AuthMiddleware(appContext.Config.JWT.Secret, loginRequireConfig))
 	router.HandleMethodNotAllowed = true
 	router.NoRoute(http.HandlerNotFound)
 	router.NoMethod(http.HandlerMethodNotAllowed)
 
-	handleAPI(&r, router.Group(routerPrefix), nil, nil, nil, nil)
+	api := router.Group(routerPrefix)
+	v1 := api.Group("/v1")
+
+	handleAPI(&r, v1)
 
 	r.Engine = router
 	return &r
