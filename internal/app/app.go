@@ -12,12 +12,13 @@ import (
 )
 
 type Server struct {
-	engine     *gin.Engine
-	appCtx     *context.AppContext
-	httpRouter *r.HttpRouter
+	engine          *gin.Engine
+	appCtx          *context.AppContext
+	httpRouter      *r.HttpRouter
+	scheduleService interface{ StartScheduler() error }
 }
 
-func NewServerWire(appContext *context.AppContext, httpRouter *r.HttpRouter) *Server {
+func NewServerWire(appContext *context.AppContext, httpRouter *r.HttpRouter, scheduleService interface{ StartScheduler() error }) *Server {
 	if !appContext.Config.Debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -35,9 +36,10 @@ func NewServerWire(appContext *context.AppContext, httpRouter *r.HttpRouter) *Se
 	}))
 
 	s := &Server{
-		engine:     r,
-		appCtx:     appContext,
-		httpRouter: httpRouter,
+		engine:          r,
+		appCtx:          appContext,
+		httpRouter:      httpRouter,
+		scheduleService: scheduleService,
 	}
 
 	// s.setupRoutes()
@@ -130,6 +132,13 @@ func NewServerWire(appContext *context.AppContext, httpRouter *r.HttpRouter) *Se
 func (s *Server) MustRun() {
 	port := s.appCtx.Config.Server.Port
 	addr := fmt.Sprintf(":%d", port)
+
+	// 启动定时任务调度器
+	if err := s.scheduleService.StartScheduler(); err != nil {
+		slog.Error("failed to start scheduler", "error", err)
+	} else {
+		slog.Info("scheduler started successfully")
+	}
 
 	slog.Info("server starting", "port", port)
 

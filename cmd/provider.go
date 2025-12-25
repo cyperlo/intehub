@@ -146,8 +146,8 @@ func ProvidePushService(model models.Model) pushService.Service {
 	return pushService.New(model.PushModel())
 }
 
-func ProvideScheduleService(model models.Model) scheduleService.Service {
-	return scheduleService.New(model.ScheduleModel())
+func ProvideScheduleService(model models.Model, appService appService.Service, pushService pushService.Service, workflowService workflowService.Service) scheduleService.Service {
+	return scheduleService.New(model.ScheduleModel(), appService, pushService, workflowService)
 }
 
 func ProvideSystemService(model models.Model) systemService.Service {

@@ -102,6 +102,7 @@
           <el-select v-model="form.task_type" @change="handleTaskTypeChange">
             <el-option label="集成任务" value="push" />
             <el-option label="应用任务" value="app" />
+            <el-option label="工作流任务" value="workflow" />
           </el-select>
         </el-form-item>
         <el-form-item label="关联配置" prop="config_id" v-if="form.task_type === 'push'">
@@ -121,6 +122,16 @@
               :key="app.id" 
               :label="app.name" 
               :value="app.id" 
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="关联工作流" prop="workflow_id" v-if="form.task_type === 'workflow'">
+          <el-select v-model="form.workflow_id" placeholder="选择工作流">
+            <el-option 
+              v-for="workflow in workflowList" 
+              :key="workflow.id" 
+              :label="workflow.name" 
+              :value="workflow.id" 
             />
           </el-select>
         </el-form-item>
@@ -227,6 +238,7 @@ import {
   type ScheduleLog
 } from '../api/schedule'
 import { getPushConfigs } from '../api/push'
+import { getWorkflows, type Workflow } from '../api/workflow'
 
 const windowWidth = ref(window.innerWidth)
 
@@ -237,6 +249,7 @@ const handleResize = () => {
 const loading = ref(false)
 const tasks = ref<ScheduleTask[]>([])
 const pushConfigs = ref<any[]>([])
+const workflowList = ref<Workflow[]>([])
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增任务')
 const submitting = ref(false)
@@ -265,6 +278,7 @@ const form = reactive<ScheduleTask>({
   task_type: 'push',
   config_id: 0,
   app_id: 0,
+  workflow_id: 0,
   enabled: false
 })
 
@@ -291,6 +305,18 @@ const rules: FormRules = {
       validator: (rule, value, callback) => {
         if (form.task_type === 'app' && !value) {
           callback(new Error('请选择应用'))
+        } else {
+          callback()
+        }
+      }, 
+      trigger: 'change' 
+    }
+  ],
+  workflow_id: [
+    { 
+      validator: (rule, value, callback) => {
+        if (form.task_type === 'workflow' && !value) {
+          callback(new Error('请选择工作流'))
         } else {
           callback()
         }
@@ -331,6 +357,14 @@ const loadPushConfigs = async () => {
     pushConfigs.value = await getPushConfigs()
   } catch (error) {
     console.error('加载集成配置失败:', error)
+  }
+}
+
+const loadWorkflows = async () => {
+  try {
+    workflowList.value = await getWorkflows()
+  } catch (error) {
+    console.error('加载工作流失败:', error)
   }
 }
 
@@ -513,6 +547,7 @@ onMounted(() => {
   window.addEventListener('resize', handleResize)
   loadTasks()
   loadPushConfigs()
+  loadWorkflows()
   loadApps()
 })
 

@@ -8,6 +8,7 @@ export interface ScheduleTask {
   task_type: string
   config_id?: number
   app_id?: number
+  workflow_id?: number
   field_data?: string
   enabled: boolean
   last_run_at?: string

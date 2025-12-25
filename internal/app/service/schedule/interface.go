@@ -10,4 +10,7 @@ type Service interface {
 	DeleteTask(id uint) error
 	ToggleTask(id uint) error
 	GetLogs(taskID *uint, page, pageSize int) ([]*scheduleModel.ScheduleLog, int64, error)
+	ExecuteTask(task *scheduleModel.ScheduleTask) error
+	StartScheduler() error
+	StopScheduler()
 }

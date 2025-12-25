@@ -11,9 +11,10 @@ type ScheduleTask struct {
 	Name        string         `gorm:"not null" json:"name"`
 	Description string         `json:"description"`
 	CronExpr    string         `gorm:"column:cron_expr;not null" json:"cron_expr"`
-	TaskType    string         `gorm:"column:task_type;not null" json:"task_type"` // push, app
+	TaskType    string         `gorm:"column:task_type;not null" json:"task_type"` // push, app, workflow
 	ConfigID    *uint          `gorm:"column:config_id" json:"config_id"`
 	AppID       *uint          `gorm:"column:app_id" json:"app_id"`
+	WorkflowID  *uint          `gorm:"column:workflow_id" json:"workflow_id"`
 	FieldData   string         `gorm:"column:field_data;type:text" json:"field_data"`
 	Enabled     bool           `gorm:"default:false" json:"enabled"`
 	LastRunAt   *time.Time     `gorm:"column:last_run_at" json:"last_run_at"`

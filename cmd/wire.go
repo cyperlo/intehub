@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"intehub/internal/app/context"
+	scheduleService "intehub/internal/app/service/schedule"
 
 	"intehub/internal/app/router"
 
@@ -36,6 +37,7 @@ var wireSet = wire.NewSet(
 	ProvideFieldService,
 	ProvidePushService,
 	ProvideScheduleService,
+	wire.Bind(new(interface{ StartScheduler() error }), new(scheduleService.Service)),
 	ProvideSystemService,
 
 	// Handlers
