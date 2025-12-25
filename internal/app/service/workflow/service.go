@@ -189,6 +189,14 @@ func (s *service) executeNode(node *workflowModel.WorkflowNode, input map[string
 	var err error
 
 	switch node.Type {
+	case "start":
+		// 开始节点直接传递数据
+		nodeLog.AppName = "开始"
+		output = input
+	case "end":
+		// 结束节点直接传递数据
+		nodeLog.AppName = "结束"
+		output = input
 	case "app":
 		output, err = s.executeAppNode(node, input, nodeLog)
 	case "transform":

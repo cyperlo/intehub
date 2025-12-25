@@ -131,17 +131,67 @@
           </div>
 
           <!-- 右侧画布 -->
-          <div class="canvas-area" @drop="onDrop" @dragover.prevent>
+          <div class="canvas-area" @drop="onDrop" @dragover.prevent" @contextmenu.prevent="onCanvasContextMenu">
             <div class="canvas-toolbar">
               <el-button-group>
-                <el-button size="small" @click="clearCanvas">
-                  <el-icon><Delete /></el-icon>
-                  清空画布
-                </el-button>
-                <el-button size="small" @click="autoLayout">
-                  <el-icon><Grid /></el-icon>
-                  自动布局
-                </el-button>
+                <el-tooltip content="撤销" placement="bottom">
+                  <el-button size="small" @click="undo" :disabled="!canUndo">
+                    <el-icon><RefreshLeft /></el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="重做" placement="bottom">
+                  <el-button size="small" @click="redo" :disabled="!canRedo">
+                    <el-icon><RefreshRight /></el-icon>
+                  </el-button>
+                </el-tooltip>
+              </el-button-group>
+              
+              <el-button-group style="margin-left: 10px">
+                <el-tooltip content="放大" placement="bottom">
+                  <el-button size="small" @click="zoomIn">
+                    <el-icon><ZoomIn /></el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="缩小" placement="bottom">
+                  <el-button size="small" @click="zoomOut">
+                    <el-icon><ZoomOut /></el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="适应画布" placement="bottom">
+                  <el-button size="small" @click="fitView">
+                    <el-icon><FullScreen /></el-icon>
+                  </el-button>
+                </el-tooltip>
+              </el-button-group>
+              
+              <div style="margin-left: 10px; display: inline-flex; align-items: center; gap: 8px">
+                <span style="font-size: 12px; color: #606266">连线类型：</span>
+                <el-select v-model="edgeType" size="small" style="width: 120px">
+                  <el-option
+                    v-for="item in edgeTypes"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+              </div>
+              
+              <el-button-group style="margin-left: 10px">
+                <el-tooltip content="删除选中连线" placement="bottom">
+                  <el-button size="small" @click="deleteSelectedEdges" type="warning">
+                    <el-icon><Connection /></el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="自动布局" placement="bottom">
+                  <el-button size="small" @click="autoLayout">
+                    <el-icon><Grid /></el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="清空画布" placement="bottom">
+                  <el-button size="small" @click="clearCanvas" type="danger">
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </el-tooltip>
               </el-button-group>
             </div>
             <VueFlow
@@ -160,7 +210,7 @@
               
               <template #node-custom="{ data }">
                 <Handle type="target" :position="Position.Left" />
-                <div class="custom-node">
+                <div class="custom-node" @contextmenu.prevent.stop="onNodeContextMenu($event, data)">
                   <div class="node-header">
                     <el-icon class="node-icon"><Box /></el-icon>
                     <span class="node-title">{{ data.label }}</span>
@@ -177,7 +227,7 @@
               </template>
 
               <template #node-start="{ data }">
-                <div class="special-node-canvas start">
+                <div class="special-node-canvas start" @contextmenu.prevent.stop="onNodeContextMenu($event, data)">
                   <el-icon><VideoPlay /></el-icon>
                   <span>开始</span>
                   <el-icon class="delete-icon" @click="deleteNode(data.id)"><Close /></el-icon>
@@ -187,7 +237,7 @@
 
               <template #node-end="{ data }">
                 <Handle type="target" :position="Position.Left" />
-                <div class="special-node-canvas end">
+                <div class="special-node-canvas end" @contextmenu.prevent.stop="onNodeContextMenu($event, data)">
                   <el-icon><CircleCheck /></el-icon>
                   <span>结束</span>
                   <el-icon class="delete-icon" @click="deleteNode(data.id)"><Close /></el-icon>
@@ -264,92 +314,210 @@
     </el-dialog>
 
     <!-- 日志对话框 -->
-    <el-dialog v-model="logsDialogVisible" title="执行日志" width="90%">
-      <el-table :data="logs" v-loading="logsLoading">
-        <el-table-column prop="name" label="工作流" width="150" />
-        <el-table-column label="状态" width="100">
+    <el-dialog v-model="logsDialogVisible" title="执行日志" width="90%" destroy-on-close>
+      <el-table :data="logs" v-loading="logsLoading" style="width: 100%" border>
+        <el-table-column prop="name" label="应用流" min-width="200" />
+        <el-table-column label="状态" width="120" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 'success' ? 'success' : 'danger'" size="small">
               {{ row.status === 'success' ? '成功' : '失败' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="duration" label="耗时(ms)" width="100" />
-        <el-table-column prop="started_at" label="开始时间" width="180">
+        <el-table-column prop="duration" label="耗时(ms)" width="120" align="center" />
+        <el-table-column prop="started_at" label="开始时间" width="200">
           <template #default="{ row }">
             {{ formatTime(row.started_at) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100">
+        <el-table-column label="操作" width="150" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="viewLogDetail(row)">详情</el-button>
+            <el-button type="primary" size="small" @click="viewLogDetail(row)">查看详情</el-button>
           </template>
         </el-table-column>
       </el-table>
+      <el-empty v-if="!logsLoading && logs.length === 0" description="暂无执行日志" />
     </el-dialog>
 
     <!-- 日志详情对话框 -->
-    <el-dialog v-model="logDetailVisible" title="日志详情" width="90%">
+    <el-dialog v-model="logDetailVisible" title="执行日志详情" width="90%" class="log-detail-dialog">
       <div v-if="currentLog" class="log-detail">
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="应用流">{{ currentLog.name }}</el-descriptions-item>
-          <el-descriptions-item label="状态">
-            <el-tag :type="currentLog.status === 'success' ? 'success' : 'danger'">
-              {{ currentLog.status === 'success' ? '成功' : '失败' }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="耗时">{{ currentLog.duration }}ms</el-descriptions-item>
-          <el-descriptions-item label="开始时间">{{ formatTime(currentLog.started_at) }}</el-descriptions-item>
-        </el-descriptions>
+        <el-card class="summary-card" shadow="never">
+          <el-descriptions :column="4" border>
+            <el-descriptions-item label="应用流名称">
+              <el-tag type="info">{{ currentLog.name }}</el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="执行状态">
+              <el-tag :type="currentLog.status === 'success' ? 'success' : 'danger'" effect="dark">
+                {{ currentLog.status === 'success' ? '✓ 成功' : '✗ 失败' }}
+              </el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="总耗时">
+              <el-tag type="warning">{{ currentLog.duration }}ms</el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="开始时间">
+              {{ formatTime(currentLog.started_at) }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </el-card>
 
-        <div class="log-section">
-          <h4>输入参数</h4>
+        <el-card class="input-card" shadow="never">
+          <template #header>
+            <div class="card-header-title">
+              <el-icon><Upload /></el-icon>
+              <span>输入参数</span>
+            </div>
+          </template>
           <pre class="log-content">{{ formatOutput(currentLog.input) }}</pre>
-        </div>
+        </el-card>
 
-        <div class="log-section">
-          <h4>节点执行日志</h4>
-          <div v-for="(nodeLog, index) in parseNodeLogs(currentLog.node_logs)" :key="index" class="node-log">
-            <el-card>
-              <div class="node-log-header">
-                <span>{{ nodeLog.app_name || nodeLog.node_id }}</span>
-                <el-tag :type="nodeLog.status === 'success' ? 'success' : 'danger'" size="small">
-                  {{ nodeLog.status }}
-                </el-tag>
-              </div>
-              <div class="node-log-content">
-                <p><strong>耗时：</strong>{{ nodeLog.duration }}ms</p>
-                <p><strong>输入：</strong></p>
-                <pre>{{ JSON.stringify(nodeLog.input, null, 2) }}</pre>
-                <p><strong>输出：</strong></p>
-                <pre>{{ JSON.stringify(nodeLog.output, null, 2) }}</pre>
-                <p v-if="nodeLog.error"><strong>错误：</strong>{{ nodeLog.error }}</p>
-              </div>
-            </el-card>
-          </div>
-        </div>
+        <el-card class="nodes-card" shadow="never">
+          <template #header>
+            <div class="card-header-title">
+              <el-icon><Connection /></el-icon>
+              <span>节点执行流程（共 {{ parseNodeLogs(currentLog.node_logs).length }} 个节点）</span>
+            </div>
+          </template>
+          
+          <el-timeline>
+            <el-timeline-item
+              v-for="(nodeLog, index) in parseNodeLogs(currentLog.node_logs)"
+              :key="index"
+              :type="nodeLog.status === 'success' ? 'success' : 'danger'"
+              :icon="nodeLog.status === 'success' ? 'CircleCheck' : 'CircleClose'"
+              :size="'large'"
+            >
+              <el-card class="node-log-card" :class="nodeLog.status">
+                <template #header>
+                  <div class="node-log-header">
+                    <div class="node-info">
+                      <el-tag :type="getNodeTypeTag(nodeLog)" size="small">
+                        {{ getNodeTypeName(nodeLog) }}
+                      </el-tag>
+                      <span class="node-name">{{ getNodeDisplayName(nodeLog) }}</span>
+                    </div>
+                    <div class="node-status">
+                      <el-tag :type="nodeLog.status === 'success' ? 'success' : 'danger'" size="small">
+                        {{ nodeLog.status === 'success' ? '成功' : '失败' }}
+                      </el-tag>
+                      <span class="node-duration">{{ nodeLog.duration }}ms</span>
+                    </div>
+                  </div>
+                </template>
+                
+                <el-collapse>
+                  <el-collapse-item title="查看详情" name="1">
+                    <div class="node-detail">
+                      <div class="detail-section">
+                        <div class="section-title">
+                          <el-icon><Download /></el-icon>
+                          <span>输入数据</span>
+                        </div>
+                        <pre class="detail-content">{{ JSON.stringify(nodeLog.input, null, 2) }}</pre>
+                      </div>
+                      
+                      <el-divider />
+                      
+                      <div class="detail-section">
+                        <div class="section-title">
+                          <el-icon><Upload /></el-icon>
+                          <span>输出数据</span>
+                        </div>
+                        <pre class="detail-content">{{ JSON.stringify(nodeLog.output, null, 2) }}</pre>
+                      </div>
+                      
+                      <div v-if="nodeLog.error" class="detail-section error-section">
+                        <el-divider />
+                        <div class="section-title">
+                          <el-icon><Warning /></el-icon>
+                          <span>错误信息</span>
+                        </div>
+                        <pre class="error-content">{{ nodeLog.error }}</pre>
+                      </div>
+                    </div>
+                  </el-collapse-item>
+                </el-collapse>
+              </el-card>
+            </el-timeline-item>
+          </el-timeline>
+        </el-card>
 
-        <div class="log-section">
-          <h4>最终输出</h4>
+        <el-card class="output-card" shadow="never">
+          <template #header>
+            <div class="card-header-title">
+              <el-icon><Download /></el-icon>
+              <span>最终输出</span>
+            </div>
+          </template>
           <pre class="log-content">{{ formatOutput(currentLog.output) }}</pre>
-        </div>
+        </el-card>
 
-        <div v-if="currentLog.error" class="log-section">
-          <h4>错误信息</h4>
+        <el-card v-if="currentLog.error" class="error-card" shadow="never">
+          <template #header>
+            <div class="card-header-title">
+              <el-icon><Warning /></el-icon>
+              <span>错误信息</span>
+            </div>
+          </template>
           <pre class="log-error">{{ currentLog.error }}</pre>
-        </div>
+        </el-card>
       </div>
     </el-dialog>
+
+    <!-- 右键菜单 -->
+    <teleport to="body">
+      <div
+        v-show="contextMenuVisible"
+        class="context-menu"
+        :style="{ left: contextMenuPosition.x + 'px', top: contextMenuPosition.y + 'px' }"
+        @click="contextMenuVisible = false"
+      >
+        <template v-if="contextMenuType === 'node'">
+          <div class="menu-item" @click="configNode(contextMenuNode)">
+            <el-icon><Setting /></el-icon>
+            <span>配置参数</span>
+          </div>
+          <div class="menu-item" @click="copyNode">
+            <el-icon><DocumentCopy /></el-icon>
+            <span>复制节点</span>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-item danger" @click="deleteNode(contextMenuNode?.id)">
+            <el-icon><Delete /></el-icon>
+            <span>删除节点</span>
+          </div>
+        </template>
+        <template v-else>
+          <div class="menu-item" @click="pasteNode">
+            <el-icon><DocumentCopy /></el-icon>
+            <span>粘贴节点</span>
+          </div>
+          <div class="menu-item" @click="autoLayout">
+            <el-icon><Grid /></el-icon>
+            <span>自动布局</span>
+          </div>
+          <div class="menu-item" @click="fitView">
+            <el-icon><FullScreen /></el-icon>
+            <span>适应画布</span>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-item" @click="clearCanvas">
+            <el-icon><Delete /></el-icon>
+            <span>清空画布</span>
+          </div>
+        </template>
+      </div>
+    </teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { VueFlow, Handle, Position } from '@vue-flow/core'
+import { VueFlow, Handle, Position, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
-import { Box, Close, Search, Delete, Grid, Setting, Operation, VideoPlay, CircleCheck } from '@element-plus/icons-vue'
+import { Box, Close, Search, Delete, Grid, Setting, Operation, VideoPlay, CircleCheck, RefreshLeft, RefreshRight, ZoomIn, ZoomOut, FullScreen, Connection, DocumentCopy, Upload, Download, Warning } from '@element-plus/icons-vue'
 import {
   getWorkflows,
   createWorkflow,
@@ -385,10 +553,34 @@ const flowNodes = ref<any[]>([])
 const flowEdges = ref<any[]>([])
 let nodeIdCounter = 0
 
+// 连线类型
+const edgeType = ref('default')
+const edgeTypes = [
+  { label: '直线', value: 'default' },
+  { label: '平滑曲线', value: 'smoothstep' },
+  { label: '阶梯线', value: 'step' },
+  { label: '贝塞尔曲线', value: 'bezier' }
+]
+
+// 历史记录
+const history = ref<Array<{ nodes: any[], edges: any[] }>>([])
+const historyIndex = ref(-1)
+const canUndo = computed(() => historyIndex.value > 0)
+const canRedo = computed(() => historyIndex.value < history.value.length - 1)
+
+// Vue Flow 实例
+const { zoomIn: vueFlowZoomIn, zoomOut: vueFlowZoomOut, fitView: vueFlowFitView } = useVueFlow()
+
 // 节点配置
 const nodeConfigVisible = ref(false)
 const currentNodeData = ref<any>(null)
 const nodeConfigStr = ref('{}')
+
+// 右键菜单
+const contextMenuVisible = ref(false)
+const contextMenuPosition = ref({ x: 0, y: 0 })
+const contextMenuType = ref<'node' | 'canvas'>('canvas')
+const contextMenuNode = ref<any>(null)
 
 const runDialogVisible = ref(false)
 const runInput = ref('{}')
@@ -442,7 +634,10 @@ const showCreateDialog = () => {
   flowNodes.value = []
   flowEdges.value = []
   nodeIdCounter = 0
+  history.value = []
+  historyIndex.value = -1
   dialogVisible.value = true
+  saveHistory()
 }
 
 const editWorkflow = (workflow: Workflow) => {
@@ -452,17 +647,44 @@ const editWorkflow = (workflow: Workflow) => {
   try {
     const parsedNodes = JSON.parse(workflow.nodes)
     // 转换为 Vue Flow 格式
-    flowNodes.value = parsedNodes.map((node: WorkflowNode, index: number) => ({
-      id: node.id,
-      type: 'custom',
-      position: node.position || { x: 100, y: 100 + index * 150 },
-      data: {
-        id: node.id,
-        label: apps.value.find(a => a.id === node.app_id)?.name || '未知应用',
-        app_id: node.app_id,
-        config: node.config || {}
+    flowNodes.value = parsedNodes.map((node: WorkflowNode, index: number) => {
+      // 根据节点类型设置不同的属性
+      if (node.type === 'start') {
+        return {
+          id: node.id,
+          type: 'start',
+          position: node.position || { x: 100, y: 100 + index * 150 },
+          data: {
+            id: node.id,
+            label: '开始',
+            nodeType: 'start'
+          }
+        }
+      } else if (node.type === 'end') {
+        return {
+          id: node.id,
+          type: 'end',
+          position: node.position || { x: 100, y: 100 + index * 150 },
+          data: {
+            id: node.id,
+            label: '结束',
+            nodeType: 'end'
+          }
+        }
+      } else {
+        return {
+          id: node.id,
+          type: 'custom',
+          position: node.position || { x: 100, y: 100 + index * 150 },
+          data: {
+            id: node.id,
+            label: apps.value.find(a => a.id === node.app_id)?.name || '未知应用',
+            app_id: node.app_id,
+            config: node.config || {}
+          }
+        }
       }
-    }))
+    })
     
     // 转换边
     flowEdges.value = []
@@ -545,6 +767,8 @@ const onDrop = (event: DragEvent) => {
     }
     flowNodes.value.push(newNode)
   }
+  
+  saveHistory()
 }
 
 const onNodesChange = () => {
@@ -560,13 +784,32 @@ const onConnect = (params: any) => {
     id: `e${params.source}-${params.target}`,
     source: params.source,
     target: params.target,
-    type: 'default'
+    type: edgeType.value
   })
+  saveHistory()
 }
 
 const deleteNode = (nodeId: string) => {
   flowNodes.value = flowNodes.value.filter(n => n.id !== nodeId)
   flowEdges.value = flowEdges.value.filter(e => e.source !== nodeId && e.target !== nodeId)
+  saveHistory()
+}
+
+// 删除选中的连线
+const deleteSelectedEdges = () => {
+  const selectedEdges = flowEdges.value.filter((e: any) => e.selected)
+  if (selectedEdges.length === 0) {
+    ElMessage.warning('请先选中要删除的连线')
+    return
+  }
+  
+  ElMessageBox.confirm(`确定要删除选中的 ${selectedEdges.length} 条连线吗？`, '提示', {
+    type: 'warning'
+  }).then(() => {
+    flowEdges.value = flowEdges.value.filter((e: any) => !e.selected)
+    saveHistory()
+    ElMessage.success('已删除')
+  }).catch(() => {})
 }
 
 const configNode = (data: any) => {
@@ -595,6 +838,7 @@ const clearCanvas = () => {
   }).then(() => {
     flowNodes.value = []
     flowEdges.value = []
+    saveHistory()
     ElMessage.success('已清空')
   }).catch(() => {})
 }
@@ -608,6 +852,113 @@ const autoLayout = () => {
     }
   })
   ElMessage.success('布局已调整')
+}
+
+// 保存历史记录
+const saveHistory = () => {
+  // 删除当前位置之后的历史
+  history.value = history.value.slice(0, historyIndex.value + 1)
+  
+  // 添加新的历史记录
+  history.value.push({
+    nodes: JSON.parse(JSON.stringify(flowNodes.value)),
+    edges: JSON.parse(JSON.stringify(flowEdges.value))
+  })
+  
+  historyIndex.value = history.value.length - 1
+  
+  // 限制历史记录数量
+  if (history.value.length > 50) {
+    history.value.shift()
+    historyIndex.value--
+  }
+}
+
+// 撤销
+const undo = () => {
+  if (canUndo.value) {
+    historyIndex.value--
+    const state = history.value[historyIndex.value]
+    flowNodes.value = JSON.parse(JSON.stringify(state.nodes))
+    flowEdges.value = JSON.parse(JSON.stringify(state.edges))
+  }
+}
+
+// 重做
+const redo = () => {
+  if (canRedo.value) {
+    historyIndex.value++
+    const state = history.value[historyIndex.value]
+    flowNodes.value = JSON.parse(JSON.stringify(state.nodes))
+    flowEdges.value = JSON.parse(JSON.stringify(state.edges))
+  }
+}
+
+// 放大
+const zoomIn = () => {
+  vueFlowZoomIn()
+}
+
+// 缩小
+const zoomOut = () => {
+  vueFlowZoomOut()
+}
+
+// 适应画布
+const fitView = () => {
+  vueFlowFitView()
+}
+
+// 右键菜单
+const onNodeContextMenu = (event: MouseEvent, data: any) => {
+  contextMenuType.value = 'node'
+  contextMenuNode.value = data
+  contextMenuPosition.value = { x: event.clientX, y: event.clientY }
+  contextMenuVisible.value = true
+}
+
+const onCanvasContextMenu = (event: MouseEvent) => {
+  contextMenuType.value = 'canvas'
+  contextMenuPosition.value = { x: event.clientX, y: event.clientY }
+  contextMenuVisible.value = true
+}
+
+// 复制节点
+let copiedNode: any = null
+const copyNode = () => {
+  if (contextMenuNode.value) {
+    const node = flowNodes.value.find(n => n.data.id === contextMenuNode.value.id)
+    if (node) {
+      copiedNode = JSON.parse(JSON.stringify(node))
+      ElMessage.success('已复制节点')
+    }
+  }
+}
+
+// 粘贴节点
+const pasteNode = () => {
+  if (!copiedNode) {
+    ElMessage.warning('没有可粘贴的节点')
+    return
+  }
+  
+  const nodeId = `node_${++nodeIdCounter}`
+  const newNode = {
+    ...copiedNode,
+    id: nodeId,
+    position: {
+      x: copiedNode.position.x + 50,
+      y: copiedNode.position.y + 50
+    },
+    data: {
+      ...copiedNode.data,
+      id: nodeId
+    }
+  }
+  
+  flowNodes.value.push(newNode)
+  saveHistory()
+  ElMessage.success('已粘贴节点')
 }
 
 const saveWorkflow = async () => {
@@ -756,9 +1107,65 @@ const formatOutput = (output: string) => {
   }
 }
 
+const getNodeTypeName = (nodeLog: any) => {
+  if (nodeLog.app_name === '开始') return '开始节点'
+  if (nodeLog.app_name === '结束') return '结束节点'
+  return '应用节点'
+}
+
+const getNodeTypeTag = (nodeLog: any) => {
+  if (nodeLog.app_name === '开始') return 'success'
+  if (nodeLog.app_name === '结束') return 'info'
+  return 'primary'
+}
+
+const getNodeDisplayName = (nodeLog: any) => {
+  // 如果有 app_name 就显示 app_name
+  if (nodeLog.app_name) {
+    return nodeLog.app_name
+  }
+  
+  // 尝试从当前工作流的节点配置中查找
+  if (currentLog.value) {
+    try {
+      const workflow = workflows.value.find(w => w.id === currentLog.value?.workflow_id)
+      if (workflow) {
+        const nodes = JSON.parse(workflow.nodes)
+        const node = nodes.find((n: any) => n.id === nodeLog.node_id)
+        if (node) {
+          // 如果是特殊节点
+          if (node.type === 'start') return '开始'
+          if (node.type === 'end') return '结束'
+          // 如果是应用节点，查找应用名称
+          if (node.app_id) {
+            const app = apps.value.find(a => a.id === node.app_id)
+            if (app) return app.name
+          }
+        }
+      }
+    } catch (e) {
+      // 解析失败，继续使用默认逻辑
+    }
+  }
+  
+  // 否则根据 node_id 判断类型
+  if (nodeLog.node_id?.includes('start')) {
+    return '开始'
+  }
+  if (nodeLog.node_id?.includes('end')) {
+    return '结束'
+  }
+  // 最后才显示 node_id
+  return nodeLog.node_id || '未知节点'
+}
+
 onMounted(() => {
   loadWorkflows()
   loadApps()
+  
+  document.addEventListener('click', () => {
+    contextMenuVisible.value = false
+  })
 })
 </script>
 
@@ -1185,5 +1592,213 @@ onMounted(() => {
   font-size: 12px;
   max-height: 200px;
   overflow: auto;
+}
+
+/* 右键菜单 */
+.context-menu {
+  position: fixed;
+  background: white;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 4px 0;
+  z-index: 9999;
+  min-width: 150px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 14px;
+  color: #606266;
+}
+
+.menu-item:hover {
+  background: #f5f7fa;
+  color: #409eff;
+}
+
+.menu-item.danger {
+  color: #f56c6c;
+}
+
+.menu-item.danger:hover {
+  background: #fef0f0;
+}
+
+.menu-divider {
+  height: 1px;
+  background: #ebeef5;
+  margin: 4px 0;
+}
+
+/* 日志详情样式优化 */
+.log-detail-dialog :deep(.el-dialog__body) {
+  padding: 20px;
+  background: #f5f7fa;
+}
+
+.log-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.summary-card,
+.input-card,
+.nodes-card,
+.output-card,
+.error-card {
+  border-radius: 8px;
+  width: 100%;
+}
+
+.nodes-card :deep(.el-timeline) {
+  padding-left: 0;
+  width: 100%;
+}
+
+.nodes-card :deep(.el-timeline-item) {
+  width: 100%;
+}
+
+.nodes-card :deep(.el-timeline-item__wrapper) {
+  padding-left: 28px;
+  width: calc(100% - 28px);
+  box-sizing: border-box;
+}
+
+.nodes-card :deep(.el-timeline-item__content) {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.nodes-card :deep(.el-timeline-item__tail) {
+  left: 4px;
+}
+
+.nodes-card :deep(.el-timeline-item__node) {
+  left: 0;
+}
+
+.card-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  color: #303133;
+}
+
+.node-log-card {
+  margin-bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.node-log-card.success {
+  border-left: 4px solid #67c23a;
+}
+
+.node-log-card.error {
+  border-left: 4px solid #f56c6c;
+}
+
+.node-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.node-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.node-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: #303133;
+}
+
+.node-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.node-duration {
+  font-size: 13px;
+  color: #909399;
+}
+
+.node-detail {
+  padding: 12px 0;
+}
+
+.detail-section {
+  margin-bottom: 16px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #606266;
+  margin-bottom: 8px;
+}
+
+.detail-content {
+  background: #f5f7fa;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.6;
+  max-height: 300px;
+  overflow: auto;
+  border: 1px solid #e4e7ed;
+}
+
+.error-section .section-title {
+  color: #f56c6c;
+}
+
+.error-content {
+  background: #fef0f0;
+  color: #f56c6c;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.6;
+  border: 1px solid #fde2e2;
+}
+
+.log-content {
+  background: #f5f7fa;
+  padding: 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.6;
+  max-height: 400px;
+  overflow: auto;
+  border: 1px solid #e4e7ed;
+}
+
+.log-error {
+  background: #fef0f0;
+  color: #f56c6c;
+  padding: 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.6;
+  border: 1px solid #fde2e2;
 }
 </style>
