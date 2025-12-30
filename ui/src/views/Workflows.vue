@@ -127,11 +127,27 @@
                 <el-icon><CircleCheck /></el-icon>
                 <span>结束节点</span>
               </div>
+              <div
+                class="special-node condition-node"
+                draggable="true"
+                @dragstart="onDragStartSpecial($event, 'condition')"
+              >
+                <el-icon><QuestionFilled /></el-icon>
+                <span>判断节点</span>
+              </div>
+              <div
+                class="special-node parallel-node"
+                draggable="true"
+                @dragstart="onDragStartSpecial($event, 'parallel')"
+              >
+                <el-icon><Share /></el-icon>
+                <span>并行节点</span>
+              </div>
             </div>
           </div>
 
           <!-- 右侧画布 -->
-          <div class="canvas-area" @drop="onDrop" @dragover.prevent" @contextmenu.prevent="onCanvasContextMenu">
+          <div class="canvas-area" @drop="onDrop" @dragover.prevent @contextmenu.prevent="onCanvasContextMenu">
             <div class="canvas-toolbar">
               <el-button-group>
                 <el-tooltip content="撤销" placement="bottom">
@@ -243,6 +259,30 @@
                   <el-icon class="delete-icon" @click="deleteNode(data.id)"><Close /></el-icon>
                 </div>
               </template>
+
+              <template #node-condition="{ data }">
+                <Handle type="target" :position="Position.Left" />
+                <div class="special-node-canvas condition" @contextmenu.prevent.stop="onNodeContextMenu($event, data)">
+                  <el-icon><QuestionFilled /></el-icon>
+                  <span>{{ data.label || '判断' }}</span>
+                  <el-icon class="delete-icon" @click="deleteNode(data.id)"><Close /></el-icon>
+                </div>
+                <Handle type="source" :position="Position.Right" id="true" style="top: 30%" />
+                <Handle type="source" :position="Position.Right" id="false" style="top: 70%" />
+                <el-button size="small" type="primary" link @click="configCondition(data)" class="config-btn">
+                  <el-icon><Setting /></el-icon>
+                </el-button>
+              </template>
+
+              <template #node-parallel="{ data }">
+                <Handle type="target" :position="Position.Left" />
+                <div class="special-node-canvas parallel" @contextmenu.prevent.stop="onNodeContextMenu($event, data)">
+                  <el-icon><Share /></el-icon>
+                  <span>并行</span>
+                  <el-icon class="delete-icon" @click="deleteNode(data.id)"><Close /></el-icon>
+                </div>
+                <Handle type="source" :position="Position.Right" />
+              </template>
             </VueFlow>
             <div v-if="flowNodes.length === 0" class="canvas-empty">
               <el-empty description="从左侧拖拽应用到此处开始创建应用流" :image-size="120" />
@@ -270,6 +310,33 @@
       <template #footer>
         <el-button @click="nodeConfigVisible = false">取消</el-button>
         <el-button type="primary" @click="saveNodeConfig">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 判断节点配置对话框 -->
+    <el-dialog v-model="conditionConfigVisible" title="配置判断条件" width="600px">
+      <el-form label-width="100px">
+        <el-form-item label="条件表达式">
+          <el-input
+            v-model="conditionExpression"
+            type="textarea"
+            :rows="4"
+            placeholder='例如: data.status == "success" 或 data.value > 100'
+          />
+          <div style="color: #909399; font-size: 12px; margin-top: 4px;">
+            支持JavaScript表达式，data为上一节点的输出数据
+          </div>
+        </el-form-item>
+        <el-form-item label="True分支">
+          <el-input v-model="conditionTrueLabel" placeholder="满足条件时的标签" />
+        </el-form-item>
+        <el-form-item label="False分支">
+          <el-input v-model="conditionFalseLabel" placeholder="不满足条件时的标签" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="conditionConfigVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveConditionConfig">保存</el-button>
       </template>
     </el-dialog>
 
@@ -406,33 +473,51 @@
                 </template>
                 
                 <el-collapse>
-                  <el-collapse-item title="查看详情" name="1">
+                  <el-collapse-item name="1">
+                    <template #title>
+                      <div class="collapse-title">
+                        <el-icon><View /></el-icon>
+                        <span>查看输入输出详情</span>
+                      </div>
+                    </template>
                     <div class="node-detail">
-                      <div class="detail-section">
-                        <div class="section-title">
-                          <el-icon><Download /></el-icon>
-                          <span>输入数据</span>
-                        </div>
-                        <pre class="detail-content">{{ JSON.stringify(nodeLog.input, null, 2) }}</pre>
-                      </div>
-                      
-                      <el-divider />
-                      
-                      <div class="detail-section">
-                        <div class="section-title">
-                          <el-icon><Upload /></el-icon>
-                          <span>输出数据</span>
-                        </div>
-                        <pre class="detail-content">{{ JSON.stringify(nodeLog.output, null, 2) }}</pre>
-                      </div>
+                      <el-row :gutter="16">
+                        <el-col :xs="24" :sm="12">
+                          <div class="detail-section input-section">
+                            <div class="section-title">
+                              <el-icon><Download /></el-icon>
+                              <span>输入数据</span>
+                              <el-tag size="small" type="info">Input</el-tag>
+                            </div>
+                            <div class="detail-content-wrapper">
+                              <pre class="detail-content">{{ formatJSON(nodeLog.input) }}</pre>
+                            </div>
+                          </div>
+                        </el-col>
+                        <el-col :xs="24" :sm="12">
+                          <div class="detail-section output-section">
+                            <div class="section-title">
+                              <el-icon><Upload /></el-icon>
+                              <span>输出数据</span>
+                              <el-tag size="small" type="success">Output</el-tag>
+                            </div>
+                            <div class="detail-content-wrapper">
+                              <pre class="detail-content">{{ formatJSON(nodeLog.output) }}</pre>
+                            </div>
+                          </div>
+                        </el-col>
+                      </el-row>
                       
                       <div v-if="nodeLog.error" class="detail-section error-section">
                         <el-divider />
                         <div class="section-title">
                           <el-icon><Warning /></el-icon>
                           <span>错误信息</span>
+                          <el-tag size="small" type="danger">Error</el-tag>
                         </div>
-                        <pre class="error-content">{{ nodeLog.error }}</pre>
+                        <div class="error-content-wrapper">
+                          <pre class="error-content">{{ nodeLog.error }}</pre>
+                        </div>
                       </div>
                     </div>
                   </el-collapse-item>
@@ -517,7 +602,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { VueFlow, Handle, Position, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
-import { Box, Close, Search, Delete, Grid, Setting, Operation, VideoPlay, CircleCheck, RefreshLeft, RefreshRight, ZoomIn, ZoomOut, FullScreen, Connection, DocumentCopy, Upload, Download, Warning } from '@element-plus/icons-vue'
+import { Box, Close, Search, Delete, Grid, Setting, Operation, VideoPlay, CircleCheck, RefreshLeft, RefreshRight, ZoomIn, ZoomOut, FullScreen, Connection, DocumentCopy, Upload, Download, Warning, View, QuestionFilled, Share } from '@element-plus/icons-vue'
 import {
   getWorkflows,
   createWorkflow,
@@ -575,6 +660,13 @@ const { zoomIn: vueFlowZoomIn, zoomOut: vueFlowZoomOut, fitView: vueFlowFitView 
 const nodeConfigVisible = ref(false)
 const currentNodeData = ref<any>(null)
 const nodeConfigStr = ref('{}')
+
+// 判断节点配置
+const conditionConfigVisible = ref(false)
+const conditionExpression = ref('')
+const conditionTrueLabel = ref('True')
+const conditionFalseLabel = ref('False')
+const currentConditionNode = ref<any>(null)
 
 // 右键菜单
 const contextMenuVisible = ref(false)
@@ -755,14 +847,21 @@ const onDrop = (event: DragEvent) => {
     }
     flowNodes.value.push(newNode)
   } else if (dragData.type === 'special') {
+    let label = '未知'
+    if (dragData.nodeType === 'start') label = '开始'
+    else if (dragData.nodeType === 'end') label = '结束'
+    else if (dragData.nodeType === 'condition') label = '判断'
+    else if (dragData.nodeType === 'parallel') label = '并行'
+    
     const newNode = {
       id: nodeId,
       type: dragData.nodeType,
       position,
       data: {
         id: nodeId,
-        label: dragData.nodeType === 'start' ? '开始' : '结束',
-        nodeType: dragData.nodeType
+        label,
+        nodeType: dragData.nodeType,
+        config: {}
       }
     }
     flowNodes.value.push(newNode)
@@ -830,6 +929,28 @@ const saveNodeConfig = () => {
   } catch (e) {
     ElMessage.warning('配置格式错误')
   }
+}
+
+const configCondition = (data: any) => {
+  currentConditionNode.value = data
+  conditionExpression.value = data.config?.expression || ''
+  conditionTrueLabel.value = data.config?.trueLabel || 'True'
+  conditionFalseLabel.value = data.config?.falseLabel || 'False'
+  conditionConfigVisible.value = true
+}
+
+const saveConditionConfig = () => {
+  const node = flowNodes.value.find(n => n.data.id === currentConditionNode.value.id)
+  if (node) {
+    node.data.config = {
+      expression: conditionExpression.value,
+      trueLabel: conditionTrueLabel.value,
+      falseLabel: conditionFalseLabel.value
+    }
+    node.data.label = `判断: ${conditionExpression.value.substring(0, 20)}${conditionExpression.value.length > 20 ? '...' : ''}`
+  }
+  conditionConfigVisible.value = false
+  ElMessage.success('判断条件已保存')
 }
 
 const clearCanvas = () => {
@@ -1107,6 +1228,19 @@ const formatOutput = (output: string) => {
   }
 }
 
+const formatJSON = (data: any) => {
+  if (!data) return '{}'
+  if (typeof data === 'string') {
+    try {
+      const parsed = JSON.parse(data)
+      return JSON.stringify(parsed, null, 2)
+    } catch (e) {
+      return data
+    }
+  }
+  return JSON.stringify(data, null, 2)
+}
+
 const getNodeTypeName = (nodeLog: any) => {
   if (nodeLog.app_name === '开始') return '开始节点'
   if (nodeLog.app_name === '结束') return '结束节点'
@@ -1361,6 +1495,30 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(245, 108, 108, 0.3);
 }
 
+.special-node.condition-node {
+  background: #fff7e6;
+  border: 2px solid #e6a23c;
+  color: #e6a23c;
+}
+
+.special-node.condition-node:hover {
+  background: #faecd8;
+  transform: translateX(5px);
+  box-shadow: 0 2px 8px rgba(230, 162, 60, 0.3);
+}
+
+.special-node.parallel-node {
+  background: #f0f9ff;
+  border: 2px solid #409eff;
+  color: #409eff;
+}
+
+.special-node.parallel-node:hover {
+  background: #ecf5ff;
+  transform: translateX(5px);
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+}
+
 .canvas-area {
   flex: 1;
   position: relative;
@@ -1508,6 +1666,27 @@ onMounted(() => {
   background: linear-gradient(135deg, #f56c6c 0%, #f78989 100%);
   color: white;
   border: 2px solid #f56c6c;
+}
+
+.special-node-canvas.condition {
+  background: linear-gradient(135deg, #e6a23c 0%, #f0c78a 100%);
+  color: white;
+  border: 2px solid #e6a23c;
+  position: relative;
+}
+
+.special-node-canvas.parallel {
+  background: linear-gradient(135deg, #409eff 0%, #79bbff 100%);
+  color: white;
+  border: 2px solid #409eff;
+}
+
+.special-node-canvas .config-btn {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
 }
 
 .special-node-canvas .delete-icon {
@@ -1742,43 +1921,85 @@ onMounted(() => {
   padding: 12px 0;
 }
 
+.collapse-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #606266;
+}
+
 .detail-section {
   margin-bottom: 16px;
+}
+
+.input-section,
+.output-section {
+  margin-bottom: 0;
 }
 
 .section-title {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-weight: 500;
   font-size: 14px;
   color: #606266;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e4e7ed;
+}
+
+.input-section .section-title {
+  border-bottom-color: #409eff;
+}
+
+.output-section .section-title {
+  border-bottom-color: #67c23a;
+}
+
+.error-section .section-title {
+  border-bottom-color: #f56c6c;
+}
+
+.detail-content-wrapper {
+  background: #fafafa;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .detail-content {
   background: #f5f7fa;
-  padding: 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  line-height: 1.6;
-  max-height: 300px;
+  padding: 14px;
+  font-size: 12px;
+  line-height: 1.8;
+  max-height: 350px;
   overflow: auto;
-  border: 1px solid #e4e7ed;
+  margin: 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+  color: #2c3e50;
 }
 
 .error-section .section-title {
   color: #f56c6c;
 }
 
+.error-content-wrapper {
+  background: #fef0f0;
+  border: 1px solid #fde2e2;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
 .error-content {
   background: #fef0f0;
   color: #f56c6c;
-  padding: 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  line-height: 1.6;
-  border: 1px solid #fde2e2;
+  padding: 14px;
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
 }
 
 .log-content {

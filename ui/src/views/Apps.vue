@@ -91,13 +91,14 @@
           <el-input v-model="form.description" type="textarea" :rows="2" placeholder="请输入应用描述" />
         </el-form-item>
         <el-form-item label="应用代码" prop="code">
-          <el-input 
+          <CodeEditor 
             v-model="form.code" 
-            type="textarea" 
-            :rows="15" 
-            placeholder="请输入 Go 代码，例如：&#10;package main&#10;&#10;import &quot;fmt&quot;&#10;&#10;func main() {&#10;    fmt.Println(&quot;Hello, World!&quot;)&#10;}"
-            style="font-family: 'Courier New', monospace;"
+            language="go"
+            height="450px"
           />
+          <div style="color: #909399; font-size: 12px; margin-top: 8px;">
+            支持语法高亮、代码提示、自动补全。快捷键：Ctrl+Space 触发代码提示
+          </div>
         </el-form-item>
         <el-form-item label="启用">
           <el-switch v-model="form.enabled" />
@@ -114,31 +115,95 @@
           应用配置用于设置应用运行时的默认参数。例如：API密钥、URL地址等。运行应用时这些配置会自动传入。
         </el-alert>
         
-        <div v-for="(config, index) in formConfigs" :key="index" class="config-item">
-          <el-row :gutter="10">
-            <el-col :span="6">
-              <el-input v-model="config.key" placeholder="参数名" size="small" />
-            </el-col>
-            <el-col :span="8">
-              <el-input v-model="config.value" placeholder="参数值" size="small" />
-            </el-col>
-            <el-col :span="5">
-              <el-select v-model="config.type" placeholder="类型" size="small" style="width: 100%">
-                <el-option label="字符串" value="string" />
-                <el-option label="数字" value="number" />
-                <el-option label="布尔" value="boolean" />
-                <el-option label="JSON" value="json" />
-              </el-select>
-            </el-col>
-            <el-col :span="3">
-              <el-checkbox v-model="config.encrypted" size="small">加密</el-checkbox>
-            </el-col>
-            <el-col :span="2">
-              <el-button type="danger" size="small" @click="removeConfig(index)" :icon="Delete" circle />
-            </el-col>
-          </el-row>
+        <div class="config-list">
+          <el-card 
+            v-for="(config, index) in formConfigs" 
+            :key="index" 
+            class="config-card"
+            shadow="hover"
+          >
+            <div class="config-card-content">
+              <div class="config-row">
+                <div class="config-field">
+                  <label>参数名</label>
+                  <el-input v-model="config.key" placeholder="例如: api_key" size="small" />
+                </div>
+                <div class="config-field">
+                  <label>数据类型</label>
+                  <el-select v-model="config.type" size="small" style="width: 100%">
+                    <el-option label="字符串" value="string" />
+                    <el-option label="数字" value="number" />
+                    <el-option label="布尔值" value="boolean" />
+                    <el-option label="JSON对象" value="json" />
+                  </el-select>
+                </div>
+              </div>
+              <div class="config-row">
+                <div class="config-field full-width">
+                  <label>参数值</label>
+                  <el-input 
+                    v-if="config.type === 'json'"
+                    v-model="config.value" 
+                    type="textarea"
+                    :rows="6"
+                    placeholder='例如: {"key": "value", "timeout": 30}'
+                    style="font-family: 'Courier New', monospace;"
+                  />
+                  <el-input-number
+                    v-else-if="config.type === 'number'"
+                    v-model="config.value"
+                    style="width: 100%"
+                    size="small"
+                    placeholder="例如: 100"
+                  />
+                  <el-select
+                    v-else-if="config.type === 'boolean'"
+                    v-model="config.value"
+                    size="small"
+                    style="width: 100%"
+                  >
+                    <el-option label="true" value="true" />
+                    <el-option label="false" value="false" />
+                  </el-select>
+                  <el-input 
+                    v-else
+                    v-model="config.value" 
+                    placeholder="例如: your_api_key_here" 
+                    size="small"
+                    :type="config.encrypted ? 'password' : 'text'"
+                    show-password
+                  />
+                </div>
+              </div>
+              <div class="config-row">
+                <div class="config-field">
+                  <el-checkbox v-model="config.encrypted" size="small" :disabled="config.type !== 'string'">
+                    <el-icon><Lock /></el-icon>
+                    加密存储（仅字符串类型）
+                  </el-checkbox>
+                </div>
+              </div>
+              <el-button 
+                type="danger" 
+                size="small" 
+                @click="removeConfig(index)" 
+                class="remove-btn"
+                text
+              >
+                <el-icon><Delete /></el-icon>
+                删除此配置
+              </el-button>
+            </div>
+          </el-card>
         </div>
-        <el-button type="primary" size="small" @click="addConfig" plain style="width: 100%;">
+        
+        <el-button 
+          type="primary" 
+          size="default" 
+          @click="addConfig" 
+          plain 
+          style="width: 100%; margin-top: 10px;"
+        >
           <el-icon><Plus /></el-icon>
           添加配置参数
         </el-button>
@@ -219,7 +284,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus } from '@element-plus/icons-vue'
+import CodeEditor from '../components/CodeEditor.vue'
+import { Delete, Plus, Lock } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { getApps, createApp, updateApp, deleteApp, runApp, getAppLogs, publishToStore, type App, type AppLog, type PublishToStoreRequest, type AppConfig } from '../api/app'
 
@@ -636,6 +702,55 @@ onUnmounted(() => {
   flex-wrap: wrap;
   padding-top: 8px;
   border-top: 1px solid #ebeef5;
+}
+
+.config-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.config-card {
+  border: 1px solid #e4e7ed;
+  transition: all 0.3s;
+}
+
+.config-card:hover {
+  border-color: #409eff;
+}
+
+.config-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.config-row {
+  display: flex;
+  gap: 12px;
+}
+
+.config-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.config-field.full-width {
+  flex: 1 1 100%;
+}
+
+.config-field label {
+  font-size: 13px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.remove-btn {
+  align-self: flex-start;
+  margin-top: 8px;
 }
 
 .config-item {
