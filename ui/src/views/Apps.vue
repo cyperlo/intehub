@@ -83,37 +83,42 @@
 
     <!-- 新增/编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" :width="isMobile ? '95%' : '800px'" :fullscreen="isMobile">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
-        <el-form-item label="应用名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入应用名称" />
-        </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="form.description" type="textarea" :rows="2" placeholder="请输入应用描述" />
-        </el-form-item>
-        <el-form-item label="应用代码" prop="code">
-          <CodeEditor 
-            v-model="form.code" 
-            language="go"
-            height="450px"
-          />
-          <div style="color: #909399; font-size: 12px; margin-top: 8px;">
-            支持语法高亮、代码提示、自动补全。快捷键：Ctrl+Space 触发代码提示
-          </div>
-        </el-form-item>
-        <el-form-item label="启用">
-          <el-switch v-model="form.enabled" />
-        </el-form-item>
+      <el-tabs v-model="activeTab" type="border-card">
+        <!-- 基本信息标签页 -->
+        <el-tab-pane label="基本信息" name="basic">
+          <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+            <el-form-item label="应用名称" prop="name">
+              <el-input v-model="form.name" placeholder="请输入应用名称" />
+            </el-form-item>
+            <el-form-item label="描述">
+              <el-input v-model="form.description" type="textarea" :rows="2" placeholder="请输入应用描述" />
+            </el-form-item>
+            <el-form-item label="应用代码" prop="code">
+              <CodeEditor 
+                v-model="form.code" 
+                language="go"
+                height="450px"
+              />
+              <div style="color: #909399; font-size: 12px; margin-top: 8px;">
+                支持语法高亮、代码提示、自动补全。快捷键：Ctrl+Space 触发代码提示
+              </div>
+            </el-form-item>
+            <el-form-item label="启用">
+              <el-switch v-model="form.enabled" />
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
         
-        <!-- 应用配置 -->
-        <el-divider>应用配置（可选）</el-divider>
-        <el-alert 
-          title="配置说明" 
-          type="info" 
-          :closable="false"
-          style="margin-bottom: 16px;"
-        >
-          应用配置用于设置应用运行时的默认参数。例如：API密钥、URL地址等。运行应用时这些配置会自动传入。
-        </el-alert>
+        <!-- 应用配置标签页 -->
+        <el-tab-pane label="应用配置" name="config">
+          <el-alert 
+            title="配置说明" 
+            type="info" 
+            :closable="false"
+            style="margin-bottom: 16px;"
+          >
+            应用配置用于设置应用运行时的默认参数。例如：API密钥、URL地址等。运行应用时这些配置会自动传入。
+          </el-alert>
         
         <div class="config-list">
           <el-card 
@@ -207,7 +212,8 @@
           <el-icon><Plus /></el-icon>
           添加配置参数
         </el-button>
-      </el-form>
+        </el-tab-pane>
+      </el-tabs>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
@@ -335,6 +341,7 @@ const form = reactive<App>({
 })
 
 const formConfigs = ref<AppConfig[]>([])
+const activeTab = ref('basic')
 
 const addConfig = () => {
   formConfigs.value.push({
@@ -374,6 +381,7 @@ const handleAdd = () => {
   currentAppId.value = undefined
   resetForm()
   formConfigs.value = []
+  activeTab.value = 'basic'
   dialogVisible.value = true
 }
 
@@ -398,6 +406,7 @@ const handleEdit = async (row: App) => {
     formConfigs.value = []
   }
   
+  activeTab.value = 'basic'
   dialogVisible.value = true
 }
 
