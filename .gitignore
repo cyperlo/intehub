@@ -45,3 +45,4 @@ temp/
 **/wire_gen.go
 
 cmd/__debug**
+**/__debug*
