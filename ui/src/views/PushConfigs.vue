@@ -3,7 +3,7 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span class="header-title">集成配置管理</span>
+          <span class="header-title">推送配置管理</span>
           <el-button type="primary" @click="handleAdd" size="default">
             <el-icon><Plus /></el-icon>
             <span class="btn-text">新增配置</span>

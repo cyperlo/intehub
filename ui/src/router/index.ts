@@ -44,13 +44,13 @@ const routes: RouteRecordRaw[] = [
         path: '/push-configs',
         name: 'PushConfigs',
         component: () => import('../views/PushConfigs.vue'),
-        meta: { title: '集成配置' }
+        meta: { title: '推送配置' }
       },
       {
         path: '/push-history',
         name: 'PushHistory',
         component: () => import('../views/PushHistory.vue'),
-        meta: { title: '集成历史' }
+        meta: { title: '推送历史' }
       },
       {
         path: '/schedule-tasks',

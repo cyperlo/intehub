@@ -49,8 +49,8 @@
             <el-icon><Promotion /></el-icon>
             <span>推送平台</span>
           </template>
-          <el-menu-item index="/push-configs">集成配置</el-menu-item>
-          <el-menu-item index="/push-history">集成历史</el-menu-item>
+          <el-menu-item index="/push-configs">推送配置</el-menu-item>
+          <el-menu-item index="/push-history">推送历史</el-menu-item>
         </el-sub-menu>
         <el-menu-item index="/schedule-tasks">
           <el-icon><Clock /></el-icon>
@@ -93,8 +93,8 @@
             <el-icon><Promotion /></el-icon>
             <span>推送平台</span>
           </template>
-          <el-menu-item index="/push-configs">集成配置</el-menu-item>
-          <el-menu-item index="/push-history">集成历史</el-menu-item>
+          <el-menu-item index="/push-configs">推送配置</el-menu-item>
+          <el-menu-item index="/push-history">推送历史</el-menu-item>
         </el-sub-menu>
         <el-menu-item index="/schedule-tasks">
           <el-icon><Clock /></el-icon>
