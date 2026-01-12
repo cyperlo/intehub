@@ -13,6 +13,7 @@ type App struct {
 	Code        string         `gorm:"type:text" json:"code"`
 	Language    string         `gorm:"default:go" json:"language"`
 	Enabled     bool           `gorm:"default:true" json:"enabled"`
+	DisplayType string         `gorm:"default:dialog" json:"display_type"` // none, page, dialog
 	UserID      uint           `json:"user_id"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`

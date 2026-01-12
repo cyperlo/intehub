@@ -7,6 +7,7 @@ export interface App {
   code: string
   language: string
   enabled: boolean
+  display_type?: 'none' | 'page' | 'dialog' // 展示类型：none-无展示, page-独立页面, dialog-弹窗
   user_id?: number
   created_at?: string
   updated_at?: string

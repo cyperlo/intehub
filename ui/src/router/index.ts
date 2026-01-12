@@ -10,6 +10,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/app-display/:id',
+    name: 'AppDisplay',
+    component: () => import('../views/AppDisplay.vue'),
+    meta: { requiresAuth: true, title: '应用展示' }
+  },
+  {
     path: '/',
     name: 'Layout',
     component: () => import('../views/Layout.vue'),

@@ -103,6 +103,18 @@
                 支持语法高亮、代码提示、自动补全。快捷键：Ctrl+Space 触发代码提示
               </div>
             </el-form-item>
+            <el-form-item label="展示类型">
+              <el-select v-model="form.display_type" placeholder="请选择展示类型">
+                <el-option label="无展示（后台执行）" value="none" />
+                <el-option label="独立页面展示" value="page" />
+                <el-option label="弹窗展示" value="dialog" />
+              </el-select>
+              <div style="color: #909399; font-size: 12px; margin-top: 4px;">
+                无展示：应用在后台执行，不展示结果<br/>
+                独立页面：应用结果在独立页面展示（适合视频、图片等媒体内容）<br/>
+                弹窗展示：应用结果在弹窗中展示（适合简单文本结果）
+              </div>
+            </el-form-item>
             <el-form-item label="启用">
               <el-switch v-model="form.enabled" />
             </el-form-item>
@@ -289,11 +301,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, reactive, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import CodeEditor from '../components/CodeEditor.vue'
 import { Delete, Plus, Lock } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { getApps, createApp, updateApp, deleteApp, runApp, getAppLogs, publishToStore, type App, type AppLog, type PublishToStoreRequest, type AppConfig } from '../api/app'
+
+const router = useRouter()
 
 const windowWidth = ref(window.innerWidth)
 const isMobile = computed(() => windowWidth.value <= 768)
@@ -337,7 +352,8 @@ const form = reactive<App>({
   description: '',
   code: '',
   language: 'go',
-  enabled: true
+  enabled: true,
+  display_type: 'dialog'
 })
 
 const formConfigs = ref<AppConfig[]>([])
@@ -451,6 +467,48 @@ const handleToggleStatus = async (row: App) => {
 }
 
 const handleRun = async (row: App) => {
+  // 根据展示类型决定运行方式
+  const displayType = row.display_type || 'dialog'
+  
+  if (displayType === 'page') {
+    // 独立页面展示 - 使用 router 跳转
+    const routeData = router.resolve({ name: 'AppDisplay', params: { id: row.id } })
+    window.open(routeData.href, '_blank')
+    return
+  }
+  
+  if (displayType === 'none') {
+    // 后台执行 - 不展示结果
+    try {
+      await ElMessageBox.confirm('确定要运行这个应用吗?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info'
+      })
+      
+      const loading = ElMessage({
+        message: '应用运行中...',
+        type: 'info',
+        duration: 0
+      })
+      
+      const result: any = await runApp(row.id!)
+      loading.close()
+      
+      if (result.status === 'success') {
+        ElMessage.success('应用运行成功')
+      } else {
+        ElMessage.error('应用运行失败：' + (result.error || '未知错误'))
+      }
+    } catch (error: any) {
+      if (error !== 'cancel') {
+        ElMessage.error(error.response?.data?.error || '运行失败')
+      }
+    }
+    return
+  }
+  
+  // 弹窗展示（默认）
   try {
     await ElMessageBox.confirm('确定要运行这个应用吗?', '提示', {
       confirmButtonText: '确定',
@@ -460,7 +518,6 @@ const handleRun = async (row: App) => {
     
     const result: any = await runApp(row.id!)
     
-    // 显示运行结果
     const status = result.status || 'unknown'
     let output = result.output || '无输出'
     const error = result.error || ''
@@ -622,7 +679,8 @@ const resetForm = () => {
     description: '',
     code: '',
     language: 'go',
-    enabled: true
+    enabled: true,
+    display_type: 'dialog'
   })
   formRef.value?.clearValidate()
 }
