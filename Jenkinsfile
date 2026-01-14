@@ -60,8 +60,6 @@ pipeline {
                         docker run -d \
                           --name intehub-backend \
                           --network host \
-                          -v ${WORKSPACE}/config.yaml:/app/config.yaml \
-                          -v ${WORKSPACE}/data:/app/data \
                           --restart unless-stopped \
                           ${BACKEND_IMAGE}
                     '''
