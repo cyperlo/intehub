@@ -46,8 +46,8 @@ pipeline {
                 script {
                     sh '''
                         export IMAGE_TAG=${IMAGE_TAG}
-                        docker-compose down
-                        docker-compose up -d
+                        docker compose down || true
+                        docker compose up -d
                     '''
                 }
             }
