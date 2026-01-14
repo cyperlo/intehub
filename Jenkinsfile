@@ -44,10 +44,36 @@ pipeline {
             steps {
                 echo '部署应用...'
                 script {
+                    // 停止并删除旧容器
                     sh '''
-                        export IMAGE_TAG=${IMAGE_TAG}
-                        docker compose down || true
-                        docker compose up -d
+                        docker stop intehub-backend || true
+                        docker rm intehub-backend || true
+                        docker stop intehub-frontend || true
+                        docker rm intehub-frontend || true
+                    '''
+                    
+                    // 创建网络（如果不存在）
+                    sh 'docker network create intehub-network || true'
+                    
+                    // 启动后端容器
+                    sh '''
+                        docker run -d \
+                          --name intehub-backend \
+                          --network host \
+                          -v $(pwd)/config.yaml:/app/config.yaml \
+                          -v $(pwd)/data:/app/data \
+                          --restart unless-stopped \
+                          ${BACKEND_IMAGE}
+                    '''
+                    
+                    // 启动前端容器
+                    sh '''
+                        docker run -d \
+                          --name intehub-frontend \
+                          --network intehub-network \
+                          -p 80:80 \
+                          --restart unless-stopped \
+                          ${FRONTEND_IMAGE}
                     '''
                 }
             }
