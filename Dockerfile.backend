@@ -9,9 +9,8 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 # 安装依赖
 RUN apk add --no-cache git make
 
-# 配置 Go 模块代理
-ENV GOPROXY=https://goproxy.cn,direct
-ENV GO111MODULE=on
+# 安装 wire
+RUN go install github.com/google/wire/cmd/wire@latest
 
 # 复制 go mod 文件
 COPY go.mod go.sum ./
@@ -19,6 +18,9 @@ RUN go mod download
 
 # 复制源代码
 COPY . .
+
+# 生成 wire 代码
+RUN cd cmd && wire
 
 # 构建应用
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o intehub ./cmd/server
