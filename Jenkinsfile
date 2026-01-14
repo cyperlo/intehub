@@ -46,10 +46,8 @@ pipeline {
                 script {
                     // 停止并删除旧容器
                     sh '''
-                        docker stop intehub-backend || true
-                        docker rm intehub-backend || true
-                        docker stop intehub-frontend || true
-                        docker rm intehub-frontend || true
+                        docker stop intehub-backend intehub-frontend || true
+                        docker rm intehub-backend intehub-frontend || true
                     '''
                     
                     // 创建网络（如果不存在）
@@ -59,7 +57,7 @@ pipeline {
                     sh '''
                         docker run -d \
                           --name intehub-backend \
-                          --network host \
+                          --network intehub-network \
                           --restart unless-stopped \
                           ${BACKEND_IMAGE}
                     '''
