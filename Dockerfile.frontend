@@ -3,6 +3,12 @@ FROM node:18-alpine AS builder
 
 WORKDIR /build
 
+# 配置镜像加速
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+
+# 配置 npm/yarn 镜像
+RUN yarn config set registry https://registry.npmmirror.com
+
 # 复制 package 文件
 COPY ui/package.json ui/yarn.lock ./
 
@@ -17,6 +23,9 @@ RUN yarn build
 
 # 运行阶段
 FROM nginx:alpine
+
+# 配置镜像加速
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 # 复制构建产物
 COPY --from=builder /build/dist /usr/share/nginx/html
