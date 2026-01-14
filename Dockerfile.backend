@@ -9,6 +9,10 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 # 安装依赖
 RUN apk add --no-cache git make
 
+# 配置 Go 模块代理
+ENV GOPROXY=https://goproxy.cn,direct
+ENV GO111MODULE=on
+
 # 安装 wire
 RUN go install github.com/google/wire/cmd/wire@latest
 
