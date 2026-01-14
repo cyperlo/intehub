@@ -69,7 +69,7 @@ pipeline {
                         docker run -d \
                           --name intehub-frontend \
                           --network intehub-network \
-                          -p 80:80 \
+                          -p 801:80 \
                           --restart unless-stopped \
                           ${FRONTEND_IMAGE}
                     '''
