@@ -25,7 +25,7 @@ func (m *model) GetByID(id uint) (*App, error) {
 
 func (m *model) List(userID uint) ([]*App, error) {
 	var apps []*App
-	query := m.db.Order("created_at DESC")
+	query := m.db.Where("enabled = ?", true).Order("created_at DESC")
 	if userID > 0 {
 		query = query.Where("user_id = ?", userID)
 	}

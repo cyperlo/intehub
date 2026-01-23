@@ -690,6 +690,7 @@ const logDetailVisible = ref(false)
 const currentLog = ref<WorkflowLog | null>(null)
 
 const filteredApps = computed(() => {
+  // 搜索过滤
   if (!appSearch.value) return apps.value
   return apps.value.filter(app => 
     app.name.toLowerCase().includes(appSearch.value.toLowerCase())
