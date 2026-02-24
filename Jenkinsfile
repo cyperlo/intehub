@@ -46,18 +46,38 @@ pipeline {
                 script {
                     // 停止并删除旧容器
                     sh '''
-                        docker stop intehub-backend intehub-frontend || true
-                        docker rm intehub-backend intehub-frontend || true
+                        docker stop intehub-backend intehub-frontend intehub-postgres || true
+                        docker rm intehub-backend intehub-frontend intehub-postgres || true
                     '''
                     
                     // 创建网络（如果不存在）
                     sh 'docker network create intehub-network || true'
+                    
+                    // 启动 PostgreSQL 容器
+                    sh '''
+                        docker run -d \
+                          --name intehub-postgres \
+                          --network intehub-network \
+                          -e POSTGRES_DB=intehub \
+                          -e POSTGRES_USER=intehub \
+                          -e POSTGRES_PASSWORD=intehub123 \
+                          -v intehub-postgres-data:/var/lib/postgresql/data \
+                          --restart unless-stopped \
+                          postgres:16-alpine
+                    '''
+                    
+                    // 等待数据库启动
+                    sh 'sleep 10'
                     
                     // 启动后端容器
                     sh '''
                         docker run -d \
                           --name intehub-backend \
                           --network intehub-network \
+                          -e INTEHUB_POSTGRESQL_URI="host=intehub-postgres port=5432 user=intehub password=intehub123 dbname=intehub sslmode=disable" \
+                          -e INTEHUB_SERVER_PORT=8080 \
+                          -e INTEHUB_JWT_SECRET="your-secret-key-change-in-production" \
+                          -p 8080:8080 \
                           --restart unless-stopped \
                           ${BACKEND_IMAGE}
                     '''
@@ -67,7 +87,7 @@ pipeline {
                         docker run -d \
                           --name intehub-frontend \
                           --network intehub-network \
-                          -p 801:80 \
+                          -p 80:80 \
                           --restart unless-stopped \
                           ${FRONTEND_IMAGE}
                     '''

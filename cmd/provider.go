@@ -46,17 +46,36 @@ import (
 
 func MustProvideConfig() *config.Config {
 	var c config.Config
+
+	// 设置配置文件
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 
+	// 自动读取环境变量
+	viper.AutomaticEnv()
+	viper.SetEnvPrefix("INTEHUB") // 环境变量前缀
+
+	// 绑定环境变量到配置字段
+	viper.BindEnv("debug", "INTEHUB_DEBUG")
+	viper.BindEnv("server.port", "INTEHUB_SERVER_PORT")
+	viper.BindEnv("postgresql.uri", "INTEHUB_POSTGRESQL_URI")
+	viper.BindEnv("jwt.secret", "INTEHUB_JWT_SECRET")
+	viper.BindEnv("apiPrefix", "INTEHUB_API_PREFIX")
+
+	// 读取配置文件（如果不存在则使用环境变量）
 	err := viper.ReadInConfig()
 	if err != nil {
-		panic(err)
+		// 配置文件不存在时，使用环境变量
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			panic(err)
+		}
 	}
+
 	if err = viper.Unmarshal(&c); err != nil {
 		panic(err)
 	}
+
 	return &c
 }
 

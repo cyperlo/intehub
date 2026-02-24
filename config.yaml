@@ -4,7 +4,7 @@ server:
   port: 8080
 
 postgresql:
-  uri: "host=49.235.43.230 user=postgres password=fR7!Qx9@M#2Lk$W^8pZ&Sa dbname=intehub port=4432 sslmode=disable TimeZone=Asia/Shanghai"
+  uri: "host=localhost user=postgres password=fR7!Qx9@M#2Lk$W^8pZ&Sa dbname=intehub port=4432 sslmode=disable TimeZone=Asia/Shanghai"
 
 jwt:
   secret: "ZbQx4Q9Hk3m1yJrU6A2cN8e0SxK5PpFvLw7DToE+I="
