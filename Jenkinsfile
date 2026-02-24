@@ -74,6 +74,32 @@ pipeline {
                 }
             }
         }
+        
+        stage('Clean Old Images') {
+            steps {
+                echo '清理旧镜像...'
+                script {
+                    sh '''
+                        # 清理后端旧镜像（保留最新3个版本）
+                        docker images intehub-backend --format "{{.Tag}}" | \
+                        grep -E '^[0-9]+$' | \
+                        sort -rn | \
+                        tail -n +4 | \
+                        xargs -r -I {} docker rmi intehub-backend:{} || true
+                        
+                        # 清理前端旧镜像（保留最新3个版本）
+                        docker images intehub-frontend --format "{{.Tag}}" | \
+                        grep -E '^[0-9]+$' | \
+                        sort -rn | \
+                        tail -n +4 | \
+                        xargs -r -I {} docker rmi intehub-frontend:{} || true
+                        
+                        # 清理悬空镜像
+                        docker image prune -f
+                    '''
+                }
+            }
+        }
     }
     
     post {
