@@ -468,11 +468,10 @@ const handleSubmit = async () => {
         } else {
           await createScheduleTask(taskData)
           ElMessage.success('创建成功')
-        }
         dialogVisible.value = false
         loadTasks()
-      } catch (error: any) {
-        ElMessage.error(error.response?.data?.error || '操作失败')
+      } catch (error) {
+        // 错误提示已在 request.ts 拦截器中统一处理
       } finally {
         submitting.value = false
       }

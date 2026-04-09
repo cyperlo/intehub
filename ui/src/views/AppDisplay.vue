@@ -127,11 +127,10 @@ const handleRun = async () => {
     if (res.status === 'success') {
       parseOutput(res.output)
       ElMessage.success('应用执行成功')
-    } else {
-      ElMessage.error('应用执行失败')
     }
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.error || '执行失败')
+    // 失败情况不需要额外提示，el-alert 已经展示错误信息
+  } catch (error) {
+    // 错误提示已在 request.ts 拦截器中统一处理
   } finally {
     running.value = false
   }

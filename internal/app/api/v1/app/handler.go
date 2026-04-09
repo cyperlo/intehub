@@ -38,14 +38,14 @@ func (h *Handler) List(c *gin.Context) (interface{}, error) {
 	return apps, nil
 }
 
-// Get 获取应用详情
+// Get 获取应用详情（加密字段返回遮蔽值）
 func (h *Handler) Get(c *gin.Context) (interface{}, error) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		return nil, errors.New("无效的ID")
 	}
 
-	app, configs, err := h.appService.GetByIDWithConfigs(uint(id))
+	app, configs, err := h.appService.GetByIDWithConfigsMasked(uint(id))
 	if err != nil {
 		return nil, errors.New("应用不存在")
 	}

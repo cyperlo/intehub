@@ -13,7 +13,11 @@
 
       <!-- 桌面端表格 -->
       <el-table :data="apps" v-loading="loading" class="desktop-table">
-        <el-table-column prop="name" label="应用名称" min-width="150" />
+        <el-table-column prop="name" label="应用名称" min-width="150">
+          <template #default="{ row }">
+            <span class="app-name-link" @click="handleDetail(row)">{{ row.name }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="description" label="描述" show-overflow-tooltip min-width="200" />
         <el-table-column label="状态" width="80">
           <template #default="{ row }">
@@ -25,17 +29,21 @@
             {{ formatTime(row.created_at) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="360" fixed="right">
+        <el-table-column label="操作" width="540" fixed="right">
           <template #default="{ row }">
+            <el-button type="primary" size="small" @click="handleDetail(row)" link>
+              <el-icon><View /></el-icon>
+              详情
+            </el-button>
             <el-button type="success" size="small" @click="handleRun(row)" link>
               <el-icon><VideoPlay /></el-icon>
               运行
             </el-button>
-            <el-button type="primary" size="small" @click="handleViewLogs(row)" link>
+            <el-button type="info" size="small" @click="handleViewLogs(row)" link>
               <el-icon><Document /></el-icon>
               日志
             </el-button>
-            <el-button type="info" size="small" @click="handlePublish(row)" link>
+            <el-button type="warning" size="small" @click="handlePublish(row)" link>
               <el-icon><Upload /></el-icon>
               发布
             </el-button>
@@ -56,7 +64,7 @@
         <el-card v-for="app in apps" :key="app.id" class="app-card" shadow="hover">
           <div class="app-header">
             <div class="app-name-row">
-              <h4>{{ app.name }}</h4>
+              <h4 class="app-name-link" @click="handleDetail(app)">{{ app.name }}</h4>
               <el-switch v-model="app.enabled" @change="handleToggleStatus(app)" size="small" />
             </div>
           </div>
@@ -71,9 +79,10 @@
             </div>
           </div>
           <div class="card-actions">
+            <el-button type="primary" size="small" @click="handleDetail(app)">详情</el-button>
             <el-button type="success" size="small" @click="handleRun(app)">运行</el-button>
-            <el-button type="primary" size="small" @click="handleViewLogs(app)">日志</el-button>
-            <el-button type="info" size="small" @click="handlePublish(app)">发布</el-button>
+            <el-button type="info" size="small" @click="handleViewLogs(app)">日志</el-button>
+            <el-button type="warning" size="small" @click="handlePublish(app)">发布</el-button>
             <el-button type="warning" size="small" @click="handleEdit(app)">编辑</el-button>
             <el-button type="danger" size="small" @click="handleDelete(app)">删除</el-button>
           </div>
@@ -82,153 +91,120 @@
     </el-card>
 
     <!-- 新增/编辑对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" :width="isMobile ? '95%' : '800px'" :fullscreen="isMobile">
-      <el-tabs v-model="activeTab" type="border-card">
-        <!-- 基本信息标签页 -->
-        <el-tab-pane label="基本信息" name="basic">
-          <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
-            <el-form-item label="应用名称" prop="name">
-              <el-input v-model="form.name" placeholder="请输入应用名称" />
-            </el-form-item>
-            <el-form-item label="描述">
-              <el-input v-model="form.description" type="textarea" :rows="2" placeholder="请输入应用描述" />
-            </el-form-item>
-            <el-form-item label="应用代码" prop="code">
-              <CodeEditor 
-                v-model="form.code" 
-                language="go"
-                height="450px"
-              />
-              <div style="color: #909399; font-size: 12px; margin-top: 8px;">
-                支持语法高亮、代码提示、自动补全。快捷键：Ctrl+Space 触发代码提示
+    <el-dialog 
+      v-model="dialogVisible" 
+      :title="dialogTitle" 
+      :width="isMobile ? '95%' : '900px'" 
+      :fullscreen="isMobile"
+      :close-on-click-modal="false"
+      destroy-on-close
+      class="app-dialog"
+    >
+      <!-- 步骤指示器 -->
+      <div class="step-indicator">
+        <div 
+          v-for="(step, index) in steps" 
+          :key="index"
+          class="step-item"
+          :class="{ active: currentStep === index, completed: currentStep > index }"
+        >
+          <div class="step-number">{{ currentStep > index ? '✓' : index + 1 }}</div>
+          <div class="step-label">{{ step }}</div>
+        </div>
+      </div>
+      
+      <!-- 步骤1: 基本信息 -->
+      <div v-show="currentStep === 0" class="step-content">
+        <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+          <el-form-item label="应用名称" prop="name">
+            <el-input v-model="form.name" placeholder="请输入应用名称" maxlength="50" show-word-limit />
+          </el-form-item>
+          <el-form-item label="描述">
+            <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入应用描述" maxlength="200" show-word-limit />
+          </el-form-item>
+          <el-form-item label="展示类型">
+            <el-select v-model="form.display_type" placeholder="请选择展示类型" style="width: 100%">
+              <el-option label="无展示（后台执行）" value="none" />
+              <el-option label="独立页面展示" value="page" />
+              <el-option label="弹窗展示" value="dialog" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="启用">
+            <el-switch v-model="form.enabled" />
+          </el-form-item>
+        </el-form>
+      </div>
+      
+      <!-- 步骤2: 应用代码 -->
+      <div v-show="currentStep === 1" class="step-content">
+        <div class="code-header">
+          <span class="code-title">应用代码</span>
+          <el-tag size="small" type="success">Go</el-tag>
+        </div>
+        <div class="code-tip">
+          支持语法高亮、自动补全。快捷键：Ctrl+Space 触发代码提示
+        </div>
+        <div class="code-editor-wrapper">
+          <CodeEditor 
+            v-model="form.code" 
+            language="go"
+            height="100%"
+          />
+        </div>
+      </div>
+
+      <!-- 步骤3: 配置参数 -->
+      <div v-show="currentStep === 2" class="step-content">
+        <el-form :model="form" ref="formRef" label-width="100px">
+          <el-form-item label="配置参数">
+            <div class="config-container">
+              <div class="config-tip">
+                <el-icon><InfoFilled /></el-icon>
+                <span>用于设置应用运行时的默认参数，如 API 密钥、URL 地址等</span>
               </div>
-            </el-form-item>
-            <el-form-item label="展示类型">
-              <el-select v-model="form.display_type" placeholder="请选择展示类型">
-                <el-option label="无展示（后台执行）" value="none" />
-                <el-option label="独立页面展示" value="page" />
-                <el-option label="弹窗展示" value="dialog" />
-              </el-select>
-              <div style="color: #909399; font-size: 12px; margin-top: 4px;">
-                无展示：应用在后台执行，不展示结果<br/>
-                独立页面：应用结果在独立页面展示（适合视频、图片等媒体内容）<br/>
-                弹窗展示：应用结果在弹窗中展示（适合简单文本结果）
-              </div>
-            </el-form-item>
-            <el-form-item label="启用">
-              <el-switch v-model="form.enabled" />
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
-        
-        <!-- 应用配置标签页 -->
-        <el-tab-pane label="应用配置" name="config">
-          <el-alert 
-            title="配置说明" 
-            type="info" 
-            :closable="false"
-            style="margin-bottom: 16px;"
-          >
-            应用配置用于设置应用运行时的默认参数。例如：API密钥、URL地址等。运行应用时这些配置会自动传入。
-          </el-alert>
-        
-        <div class="config-list">
-          <el-card 
-            v-for="(config, index) in formConfigs" 
-            :key="index" 
-            class="config-card"
-            shadow="hover"
-          >
-            <div class="config-card-content">
-              <div class="config-row">
-                <div class="config-field">
-                  <label>参数名</label>
-                  <el-input v-model="config.key" placeholder="例如: api_key" size="small" />
-                </div>
-                <div class="config-field">
-                  <label>数据类型</label>
-                  <el-select v-model="config.type" size="small" style="width: 100%">
-                    <el-option label="字符串" value="string" />
-                    <el-option label="数字" value="number" />
-                    <el-option label="布尔值" value="boolean" />
-                    <el-option label="JSON对象" value="json" />
-                  </el-select>
-                </div>
-              </div>
-              <div class="config-row">
-                <div class="config-field full-width">
-                  <label>参数值</label>
-                  <el-input 
-                    v-if="config.type === 'json'"
-                    v-model="config.value" 
-                    type="textarea"
-                    :rows="6"
-                    placeholder='例如: {"key": "value", "timeout": 30}'
-                    style="font-family: 'Courier New', monospace;"
-                  />
-                  <el-input-number
-                    v-else-if="config.type === 'number'"
-                    v-model="config.value"
-                    style="width: 100%"
-                    size="small"
-                    placeholder="例如: 100"
-                  />
-                  <el-select
-                    v-else-if="config.type === 'boolean'"
-                    v-model="config.value"
-                    size="small"
-                    style="width: 100%"
-                  >
-                    <el-option label="true" value="true" />
-                    <el-option label="false" value="false" />
-                  </el-select>
-                  <el-input 
-                    v-else
-                    v-model="config.value" 
-                    placeholder="例如: your_api_key_here" 
-                    size="small"
-                    :type="config.encrypted ? 'password' : 'text'"
-                    show-password
-                  />
+              <div class="config-list">
+                <div v-for="(config, index) in formConfigs" :key="index" class="config-item">
+                  <div class="config-row">
+                    <el-input v-model="config.key" placeholder="参数名" size="default" style="flex: 1.2" />
+                    <el-select v-model="config.type" placeholder="类型" size="default" style="flex: 0.8; min-width: 100px">
+                      <el-option label="字符串" value="string" />
+                      <el-option label="数字" value="number" />
+                      <el-option label="布尔值" value="boolean" />
+                    </el-select>
+                    <el-input 
+                      v-model="config.value" 
+                      :placeholder="config.encrypted ? '加密存储' : '参数值'" 
+                      size="default"
+                      :type="config.encrypted ? 'password' : 'text'"
+                      show-password
+                      style="flex: 1.5"
+                    />
+                    <el-checkbox v-model="config.encrypted" :disabled="config.type !== 'string'" style="min-width: 60px;">
+                      <el-icon><Lock /></el-icon>
+                    </el-checkbox>
+                    <el-button type="danger" @click="removeConfig(index)">
+                      <el-icon><Delete /></el-icon>
+                    </el-button>
+                  </div>
                 </div>
               </div>
-              <div class="config-row">
-                <div class="config-field">
-                  <el-checkbox v-model="config.encrypted" size="small" :disabled="config.type !== 'string'">
-                    <el-icon><Lock /></el-icon>
-                    加密存储（仅字符串类型）
-                  </el-checkbox>
-                </div>
-              </div>
-              <el-button 
-                type="danger" 
-                size="small" 
-                @click="removeConfig(index)" 
-                class="remove-btn"
-                text
-              >
-                <el-icon><Delete /></el-icon>
-                删除此配置
+              <el-button type="primary" plain @click="addConfig" class="add-config-btn">
+                <el-icon><Plus /></el-icon>
+                添加参数
               </el-button>
             </div>
-          </el-card>
-        </div>
-        
-        <el-button 
-          type="primary" 
-          size="default" 
-          @click="addConfig" 
-          plain 
-          style="width: 100%; margin-top: 10px;"
-        >
-          <el-icon><Plus /></el-icon>
-          添加配置参数
-        </el-button>
-        </el-tab-pane>
-      </el-tabs>
+          </el-form-item>
+        </el-form>
+      </div>
+      
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
+        <div class="dialog-footer">
+          <el-button v-if="currentStep > 0" @click="currentStep--">上一步</el-button>
+          <el-button v-if="currentStep < steps.length - 1" type="primary" @click="nextStep">下一步</el-button>
+          <el-button v-if="currentStep === steps.length - 1" type="primary" @click="handleSubmit" :loading="submitting">
+            {{ currentAppId ? '保存' : '创建' }}
+          </el-button>
+        </div>
       </template>
     </el-dialog>
 
@@ -304,7 +280,7 @@ import { ref, onMounted, onUnmounted, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import CodeEditor from '../components/CodeEditor.vue'
-import { Delete, Plus, Lock } from '@element-plus/icons-vue'
+import { Delete, Plus, Lock, InfoFilled, View } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { getApps, createApp, updateApp, deleteApp, runApp, getAppLogs, publishToStore, type App, type AppLog, type PublishToStoreRequest, type AppConfig } from '../api/app'
 
@@ -357,7 +333,8 @@ const form = reactive<App>({
 })
 
 const formConfigs = ref<AppConfig[]>([])
-const activeTab = ref('basic')
+const currentStep = ref(0)
+const steps = ['基本信息', '应用代码', '配置参数']
 
 const addConfig = () => {
   formConfigs.value.push({
@@ -370,6 +347,19 @@ const addConfig = () => {
 
 const removeConfig = (index: number) => {
   formConfigs.value.splice(index, 1)
+}
+
+const nextStep = () => {
+  if (currentStep.value === 0) {
+    // 验证第一步表单
+    formRef.value?.validateField('name', (valid) => {
+      if (valid) {
+        currentStep.value++
+      }
+    })
+  } else {
+    currentStep.value++
+  }
 }
 
 const rules: FormRules = {
@@ -397,7 +387,7 @@ const handleAdd = () => {
   currentAppId.value = undefined
   resetForm()
   formConfigs.value = []
-  activeTab.value = 'basic'
+  currentStep.value = 0
   dialogVisible.value = true
 }
 
@@ -422,7 +412,6 @@ const handleEdit = async (row: App) => {
     formConfigs.value = []
   }
   
-  activeTab.value = 'basic'
   dialogVisible.value = true
 }
 
@@ -447,8 +436,8 @@ const handleSubmit = async () => {
         }
         dialogVisible.value = false
         loadApps()
-      } catch (error: any) {
-        ElMessage.error(error.response?.data?.error || '操作失败')
+      } catch (error) {
+        // 错误提示已在 request.ts 拦截器中统一处理
       } finally {
         submitting.value = false
       }
@@ -500,10 +489,8 @@ const handleRun = async (row: App) => {
       } else {
         ElMessage.error('应用运行失败：' + (result.error || '未知错误'))
       }
-    } catch (error: any) {
-      if (error !== 'cancel') {
-        ElMessage.error(error.response?.data?.error || '运行失败')
-      }
+    } catch (error) {
+      // 错误提示已在 request.ts 拦截器中统一处理
     }
     return
   }
@@ -565,10 +552,8 @@ const handleRun = async (row: App) => {
         }
       )
     }
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error.response?.data?.error || '运行失败')
-    }
+  } catch (error) {
+    // 错误提示已在 request.ts 拦截器中统一处理
   }
 }
 
@@ -590,6 +575,10 @@ const handleViewLogs = (row: App) => {
   logPage.value = 1
   loadLogs()
   logDialogVisible.value = true
+}
+
+const handleDetail = (row: App) => {
+  router.push({ name: 'AppDetail', params: { id: row.id } })
 }
 
 const loadLogs = async () => {
@@ -769,6 +758,17 @@ onUnmounted(() => {
   color: #303133;
 }
 
+.app-name-link {
+  color: #409eff;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.app-name-link:hover {
+  color: #66b1ff;
+  text-decoration: underline;
+}
+
 .app-info {
   margin-bottom: 12px;
   font-size: 14px;
@@ -857,6 +857,169 @@ onUnmounted(() => {
 .remove-btn {
   align-self: flex-start;
   margin-top: 8px;
+}
+
+/* 步骤指示器样式 */
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  margin: 0 30px;
+  cursor: pointer;
+}
+
+.step-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: -30px;
+  width: 30px;
+  height: 2px;
+  background: #dcdfe6;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #dcdfe6;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-right: 10px;
+  transition: all 0.3s;
+}
+
+.step-label {
+  font-size: 14px;
+  color: #909399;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.step-item.active .step-number {
+  background: #409eff;
+  box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.2);
+}
+
+.step-item.active .step-label {
+  color: #409eff;
+}
+
+.step-item.completed .step-number {
+  background: #67c23a;
+}
+
+.step-item.completed .step-label {
+  color: #67c23a;
+}
+
+/* 步骤内容 */
+.step-content {
+  min-height: 500px;
+}
+
+/* 代码编辑器样式 */
+.code-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.code-title {
+  font-weight: 600;
+  color: #303133;
+  font-size: 16px;
+}
+
+.code-tip {
+  color: #909399;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.code-editor-wrapper {
+  height: 480px;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.code-editor-wrapper :deep(.code-editor) {
+  height: 100% !important;
+}
+
+/* 配置参数样式 */
+.config-container {
+  background: #fafafa;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.config-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #909399;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.config-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.config-item {
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #ebeef5;
+}
+
+.config-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.add-config-btn {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* 响应式 */
+@media (max-width: 1000px) {
+  .app-form .form-grid {
+    flex-direction: column;
+  }
+  
+  .form-left {
+    flex: none;
+    width: 100%;
+  }
+  
+  .code-editor-wrapper {
+    min-height: 350px;
+  }
 }
 
 .log-container {

@@ -41,6 +41,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '应用商店' }
       },
       {
+        path: '/app/:id',
+        name: 'AppDetail',
+        component: () => import('../views/AppDetail.vue'),
+        meta: { title: '应用详情' }
+      },
+      {
         path: '/workflows',
         name: 'Workflows',
         component: () => import('../views/Workflows.vue'),

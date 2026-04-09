@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	cryptoutil "intehub/internal/utils/crypto"
 	"intehub/appl"
 	appModel "intehub/internal/app/models/app"
 	"intehub/internal/app/models/appstore"
@@ -15,12 +16,14 @@ import (
 type service struct {
 	model         appModel.Model
 	appstoreModel appstore.Model
+	cryptoKey     string
 }
 
-func New(model appModel.Model, appstoreModel appstore.Model) Service {
+func New(model appModel.Model, appstoreModel appstore.Model, cryptoKey string) Service {
 	return &service{
 		model:         model,
 		appstoreModel: appstoreModel,
+		cryptoKey:     cryptoKey,
 	}
 }
 
@@ -49,6 +52,14 @@ func (s *service) CreateWithConfigs(app *appModel.App, configs []ConfigInput) er
 		if config.Type == "" {
 			config.Type = "string"
 		}
+		// 如果启用加密，则加密存储
+		if cfg.Encrypted && cfg.Value != "" && s.cryptoKey != "" {
+			encryptedValue, err := cryptoutil.AESEncrypt([]byte(cfg.Value), s.cryptoKey)
+			if err != nil {
+				return fmt.Errorf("加密配置值失败: %w", err)
+			}
+			config.Value = encryptedValue
+		}
 		if err := s.appstoreModel.CreateConfig(config); err != nil {
 			return fmt.Errorf("创建配置失败: %w", err)
 		}
@@ -70,6 +81,23 @@ func (s *service) GetByIDWithConfigs(id uint) (*appModel.App, []*appstore.AppCon
 	configs, err := s.appstoreModel.GetConfigsByAppID(id)
 	if err != nil {
 		return app, []*appstore.AppConfig{}, nil
+	}
+
+	return app, configs, nil
+}
+
+// GetByIDWithConfigsMasked 获取应用配置，加密字段返回遮蔽值
+func (s *service) GetByIDWithConfigsMasked(id uint) (*appModel.App, []*appstore.AppConfig, error) {
+	app, configs, err := s.GetByIDWithConfigs(id)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// 对加密字段进行遮蔽
+	for _, config := range configs {
+		if config.Encrypted {
+			config.Value = "******"
+		}
 	}
 
 	return app, configs, nil
@@ -108,6 +136,14 @@ func (s *service) UpdateWithConfigs(app *appModel.App, configs []ConfigInput) er
 		}
 		if config.Type == "" {
 			config.Type = "string"
+		}
+		// 如果启用加密，则加密存储
+		if cfg.Encrypted && cfg.Value != "" && s.cryptoKey != "" {
+			encryptedValue, err := cryptoutil.AESEncrypt([]byte(cfg.Value), s.cryptoKey)
+			if err != nil {
+				return fmt.Errorf("加密配置值失败: %w", err)
+			}
+			config.Value = encryptedValue
 		}
 		if err := s.appstoreModel.CreateConfig(config); err != nil {
 			return fmt.Errorf("创建配置失败: %w", err)
@@ -176,30 +212,40 @@ func (s *service) RunWithInput(id uint, input map[string]interface{}) (*appModel
 	configs, err := s.appstoreModel.GetConfigsByAppID(app.ID)
 	if err == nil && len(configs) > 0 {
 		for _, config := range configs {
+			configValue := config.Value
+
+			// 如果是加密配置，则解密
+			if config.Encrypted && configValue != "" && s.cryptoKey != "" {
+				decrypted, err := cryptoutil.AESDecrypt(configValue, s.cryptoKey)
+				if err == nil {
+					configValue = string(decrypted)
+				}
+			}
+
 			// 根据配置类型转换值
 			var value interface{}
 			switch config.Type {
 			case "number":
 				// 尝试转换为数字
-				if num, err := strconv.ParseFloat(config.Value, 64); err == nil {
+				if num, err := strconv.ParseFloat(configValue, 64); err == nil {
 					value = num
 				} else {
-					value = config.Value
+					value = configValue
 				}
 			case "boolean":
 				// 转换为布尔值
-				value = config.Value == "true" || config.Value == "1"
+				value = configValue == "true" || configValue == "1"
 			case "json":
 				// 尝试解析 JSON
 				var jsonValue interface{}
-				if err := json.Unmarshal([]byte(config.Value), &jsonValue); err == nil {
+				if err := json.Unmarshal([]byte(configValue), &jsonValue); err == nil {
 					value = jsonValue
 				} else {
-					value = config.Value
+					value = configValue
 				}
 			default:
 				// string 或其他类型，直接使用字符串
-				value = config.Value
+				value = configValue
 			}
 			inputParams[config.Key] = value
 		}

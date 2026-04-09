@@ -154,8 +154,8 @@ func ProvideAuthService(model models.Model) authService.Service {
 	return authService.New(model.UserModel())
 }
 
-func ProvideAppService(model models.Model) appService.Service {
-	return appService.New(model.AppModel(), model.AppStoreModel())
+func ProvideAppService(model models.Model, cfg *config.Config) appService.Service {
+	return appService.New(model.AppModel(), model.AppStoreModel(), cfg.Crypto.Key)
 }
 
 func ProvideFieldService(model models.Model) fieldService.Service {

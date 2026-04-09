@@ -17,6 +17,7 @@ type Service interface {
 	CreateWithConfigs(app *appModel.App, configs []ConfigInput) error
 	GetByID(id uint) (*appModel.App, error)
 	GetByIDWithConfigs(id uint) (*appModel.App, []*appstore.AppConfig, error)
+	GetByIDWithConfigsMasked(id uint) (*appModel.App, []*appstore.AppConfig, error)
 	List(userID uint) ([]*appModel.App, error)
 	Update(app *appModel.App) error
 	UpdateWithConfigs(app *appModel.App, configs []ConfigInput) error
