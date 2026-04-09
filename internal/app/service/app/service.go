@@ -219,6 +219,10 @@ func (s *service) RunWithInput(id uint, input map[string]interface{}) (*appModel
 				decrypted, err := cryptoutil.AESDecrypt(configValue, s.cryptoKey)
 				if err == nil {
 					configValue = string(decrypted)
+				} else {
+					log.Error = fmt.Sprintf("解密配置失败: %s", err.Error())
+					s.model.CreateLog(log)
+					return log, fmt.Errorf("解密配置 [%s] 失败: %w", config.Key, err)
 				}
 			}
 

@@ -468,6 +468,7 @@ const handleSubmit = async () => {
         } else {
           await createScheduleTask(taskData)
           ElMessage.success('创建成功')
+        }
         dialogVisible.value = false
         loadTasks()
       } catch (error) {
