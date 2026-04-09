@@ -30,12 +30,13 @@ request.interceptors.response.use(
     if (res.code === 0) {
       return res.data
     } else {
-      // 处理业务错误
-      ElMessage.error(res.message || res.detail || '请求失败')
-      return Promise.reject(new Error(res.message || '请求失败'))
+      // 处理业务错误，抛出错误让调用方自行处理
+      return Promise.reject(new Error(res.message || res.detail || '请求失败'))
     }
   },
   (error) => {
+    let message = '操作失败，请稍后重试'
+    
     if (error.response) {
       const { status, data } = error.response
       
@@ -43,17 +44,23 @@ request.interceptors.response.use(
         const authStore = useAuthStore()
         authStore.logout()
         router.push('/login')
-        ElMessage.error('登录已过期，请重新登录')
+        message = '登录已过期，请重新登录'
+      } else if (status === 403) {
+        message = '没有权限进行此操作'
+      } else if (status === 404) {
+        message = '请求的资源不存在'
+      } else if (status >= 500) {
+        message = '服务器异常，请稍后重试'
       } else {
-        // 处理统一返回格式的错误
-        const message = data.message || data.detail || data.error || '请求失败'
-        ElMessage.error(message)
+        // 从响应中提取后端返回的错误信息
+        message = data?.message || data?.detail || data?.error || `请求失败 (${status})`
       }
-    } else {
-      ElMessage.error('网络错误，请检查网络连接')
+    } else if (error.request) {
+      message = '网络连接失败，请检查网络'
     }
     
-    return Promise.reject(error)
+    ElMessage.error(message)
+    return Promise.reject(new Error(message))
   }
 )
 

@@ -2,9 +2,9 @@ package auth
 
 import (
 	"context"
-	"errors"
 	ac "intehub/internal/app/context"
 	userModel "intehub/internal/app/models/user"
+	httpUtil "intehub/internal/utils/http"
 	"intehub/pkg/jwt"
 	"time"
 )
@@ -24,11 +24,11 @@ func (s *service) Login(ctx context.Context, username, password string) (*LoginR
 
 	user, err := s.userModel.GetUserByUsername(username)
 	if err != nil {
-		return nil, err
+		return nil, &httpUtil.BadRequest{Message: "账号或密码错误"}
 	}
 
 	if !user.CheckPassword(password) {
-		return nil, errors.New("密码错误")
+		return nil, &httpUtil.BadRequest{Message: "账号或密码错误"}
 	}
 
 	// 生成JWT token

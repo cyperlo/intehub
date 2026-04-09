@@ -89,7 +89,7 @@ const handleLogin = async () => {
         router.push('/')
       } catch (error: any) {
         console.error('登录失败:', error)
-        ElMessage.error(error?.response?.data?.error || error?.message || '登录失败，请重试')
+        // 错误提示已在拦截器中显示，此处不再重复提示
       } finally {
         loading.value = false
       }
