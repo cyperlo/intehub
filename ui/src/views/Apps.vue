@@ -700,6 +700,16 @@ onUnmounted(() => {
   width: 100%;
 }
 
+:deep(.el-card) {
+  border-radius: 16px !important;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-card__header) {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -707,12 +717,29 @@ onUnmounted(() => {
 }
 
 .header-title {
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+:deep(.el-button--primary) {
+  border-radius: 10px !important;
   font-weight: 500;
+  padding: 10px 20px;
 }
 
 .desktop-table {
   width: 100%;
+}
+
+:deep(.el-table th) {
+  background: #fafafa !important;
+  font-weight: 600;
+  color: #303133;
+}
+
+:deep(.el-table th .cell) {
+  font-weight: 600;
 }
 
 .mobile-list {
@@ -720,13 +747,13 @@ onUnmounted(() => {
 }
 
 .app-card {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .app-header {
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid #f0f2f5;
 }
 
 .app-name-row {
@@ -738,6 +765,7 @@ onUnmounted(() => {
 .app-name-row h4 {
   margin: 0;
   font-size: 16px;
+  font-weight: 600;
   color: #303133;
 }
 
@@ -758,7 +786,7 @@ onUnmounted(() => {
 }
 
 .info-row .value {
-  color: #303133;
+  color: #606266;
   flex: 1;
   word-break: break-all;
 }
@@ -767,8 +795,17 @@ onUnmounted(() => {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  padding-top: 8px;
-  border-top: 1px solid #ebeef5;
+  padding-top: 12px;
+  border-top: 1px solid #f0f2f5;
+}
+
+:deep(.el-button.is-link) {
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+:deep(.el-button.is-link:hover) {
+  background: rgba(64, 158, 255, 0.1);
 }
 
 .config-list {
@@ -781,10 +818,12 @@ onUnmounted(() => {
 .config-card {
   border: 1px solid #e4e7ed;
   transition: all 0.3s;
+  border-radius: 12px !important;
 }
 
 .config-card:hover {
   border-color: #409eff;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.1);
 }
 
 .config-card-content {
@@ -820,17 +859,11 @@ onUnmounted(() => {
   margin-top: 8px;
 }
 
-.config-item {
-  margin-bottom: 12px;
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 4px;
-}
-
 .log-container {
   min-height: 400px;
   max-height: 600px;
   overflow-y: auto;
+  padding: 8px;
 }
 
 .empty-logs {
@@ -848,29 +881,31 @@ onUnmounted(() => {
 
 .log-item {
   border: 1px solid #ebeef5;
-  border-radius: 4px;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 16px;
   background: #fff;
   transition: all 0.3s;
 }
 
 .log-item:hover {
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .log-item.success {
-  border-left: 3px solid #67c23a;
+  border-left: 4px solid #67c23a;
+  background: linear-gradient(90deg, #f0f9eb 0%, #fff 8%);
 }
 
 .log-item.error {
-  border-left: 3px solid #f56c6c;
+  border-left: 4px solid #f56c6c;
+  background: linear-gradient(90deg, #fef0f0 0%, #fff 8%);
 }
 
 .log-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   padding-bottom: 8px;
   border-bottom: 1px solid #f5f7fa;
 }
@@ -884,23 +919,24 @@ onUnmounted(() => {
   color: #606266;
   font-size: 13px;
   margin-left: auto;
+  font-weight: 500;
 }
 
 .log-content {
-  margin-top: 8px;
+  margin-top: 12px;
 }
 
 .log-label {
   color: #606266;
   font-size: 13px;
   font-weight: 500;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .log-output, .log-error {
   background: #f5f7fa;
-  padding: 12px;
-  border-radius: 4px;
+  padding: 16px;
+  border-radius: 8px;
   font-family: 'Courier New', monospace;
   font-size: 13px;
   line-height: 1.6;
@@ -925,6 +961,14 @@ onUnmounted(() => {
   
   .btn-text {
     margin-left: 4px;
+  }
+  
+  .card-actions {
+    flex-wrap: wrap;
+  }
+  
+  .card-actions .el-button {
+    flex: 1 1 45%;
   }
 }
 </style>

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	fieldModel "intehub/internal/app/models/field"
 	pushModel "intehub/internal/app/models/push"
+	cryptoutil "intehub/internal/utils/crypto"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -12,11 +14,12 @@ import (
 )
 
 type service struct {
-	model pushModel.Model
+	model     pushModel.Model
+	cryptoKey string
 }
 
-func New(model pushModel.Model) Service {
-	return &service{model: model}
+func New(model pushModel.Model, cryptoKey string) Service {
+	return &service{model: model, cryptoKey: cryptoKey}
 }
 
 func (s *service) GetConfigs(userID uint) ([]*pushModel.PushConfig, error) {
@@ -45,6 +48,12 @@ func (s *service) Send(configID uint, data map[string]interface{}) error {
 		return err
 	}
 
+	// 解密 URL
+	decryptedURL, err := cryptoutil.DecryptURL(config.URL, s.cryptoKey)
+	if err != nil {
+		return errors.New("URL解密失败")
+	}
+
 	// 替换模板
 	content := config.Template
 	for k, v := range data {
@@ -52,7 +61,7 @@ func (s *service) Send(configID uint, data map[string]interface{}) error {
 	}
 
 	startTime := time.Now()
-	req, _ := http.NewRequest(config.Method, config.URL, bytes.NewBufferString(content))
+	req, _ := http.NewRequest(config.Method, decryptedURL, bytes.NewBufferString(content))
 	req.Header.Set("Content-Type", "application/json")
 
 	// 添加自定义 headers

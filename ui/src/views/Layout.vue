@@ -195,67 +195,125 @@ const handleLogout = async () => {
 }
 
 .el-aside {
-  background-color: #304156;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
   color: #fff;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
 }
 
 .logo {
-  height: 60px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  font-weight: bold;
+  font-size: 22px;
+  font-weight: 700;
   color: #fff;
-  background-color: #282f3d;
+  background: rgba(255, 255, 255, 0.05);
+  letter-spacing: 2px;
+  position: relative;
+}
+
+.logo::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
 }
 
 .el-menu {
   border: none;
-  background-color: #304156;
+  background: transparent;
+  padding: 8px 0;
 }
 
 .el-menu-item {
-  color: #bfcbd9;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 4px 8px;
+  border-radius: 10px;
+  height: 48px;
+  display: flex;
+  align-items: center;
 }
 
 .el-menu-item:hover,
 .el-menu-item.is-active {
-  background-color: #263445 !important;
-  color: #409eff !important;
+  background: rgba(64, 158, 255, 0.15) !important;
+  color: #fff !important;
+}
+
+.el-menu-item.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 24px;
+  background: linear-gradient(180deg, #409eff, #66b1ff);
+  border-radius: 0 2px 2px 0;
+}
+
+.el-menu-item .el-icon {
+  margin-right: 10px;
+  font-size: 18px;
 }
 
 .el-sub-menu {
-  background-color: #304156;
+  margin: 4px 8px;
 }
 
 .el-sub-menu :deep(.el-sub-menu__title) {
-  color: #bfcbd9;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 4px 0;
+  border-radius: 10px;
+  height: 48px;
+  display: flex;
+  align-items: center;
 }
 
-.el-sub-menu :deep(.el-sub-menu__title):hover {
-  background-color: #263445 !important;
-  color: #409eff !important;
+.el-sub-menu :deep(.el-sub-menu__title:hover) {
+  background: rgba(64, 158, 255, 0.15) !important;
+  color: #fff !important;
+}
+
+.el-sub-menu :deep(.el-sub-menu__title) .el-icon {
+  margin-right: 10px;
+  font-size: 18px;
+}
+
+.el-sub-menu :deep(.el-sub-menu__arrow) {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.el-sub-menu :deep(.el-menu) {
+  background: transparent !important;
 }
 
 .el-sub-menu :deep(.el-menu-item) {
-  background-color: #1f2d3d !important;
-  color: #bfcbd9;
-  padding-left: 50px !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.6);
+  padding-left: 48px !important;
+  height: 40px;
+  margin: 2px 8px;
+  border-radius: 8px;
 }
 
 .el-sub-menu :deep(.el-menu-item):hover,
 .el-sub-menu :deep(.el-menu-item.is-active) {
-  background-color: #001528 !important;
-  color: #409eff !important;
+  background: rgba(64, 158, 255, 0.1) !important;
+  color: #fff !important;
 }
 
 .el-header {
   background-color: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   display: flex;
   align-items: center;
-  padding: 0 20px;
+  padding: 0 24px;
+  height: 64px !important;
 }
 
 .header-content {
@@ -268,6 +326,8 @@ const handleLogout = async () => {
 .header-content h3 {
   margin: 0;
   color: #303133;
+  font-weight: 600;
+  font-size: 18px;
 }
 
 .user-info {
@@ -281,20 +341,24 @@ const handleLogout = async () => {
   align-items: center;
   gap: 8px;
   color: #606266;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.3s;
 }
 
 .el-dropdown-link:hover {
+  background: #f5f7fa;
   color: #409eff;
 }
 
 .el-main {
-  background-color: #f0f2f5;
-  padding: 20px;
+  background: linear-gradient(180deg, #f5f7fa 0%, #eef1f5 100%);
+  padding: 24px;
 }
 
 /* 移动端样式 */
 .mobile-header {
-  background-color: #304156;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   border-bottom: none;
   padding: 0 16px;
   height: 56px !important;
@@ -303,6 +367,7 @@ const handleLogout = async () => {
   left: 0;
   right: 0;
   z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .mobile-header-content {
@@ -332,7 +397,10 @@ const handleLogout = async () => {
 .drawer-logo {
   font-size: 20px;
   font-weight: bold;
-  color: #304156;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 @media (max-width: 768px) {

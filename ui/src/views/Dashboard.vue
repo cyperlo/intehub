@@ -205,27 +205,38 @@ onUnmounted(() => {
 }
 
 .stats-row {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .stat-card-wrapper {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+:deep(.el-card) {
+  border-radius: 16px !important;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-card:hover) {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1) !important;
 }
 
 .stat-card {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
 }
 
 .stat-icon {
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .stat-content {
@@ -234,19 +245,29 @@ onUnmounted(() => {
 }
 
 .stat-value {
-  font-size: 28px;
-  font-weight: bold;
-  color: #303133;
-  margin-bottom: 8px;
+  font-size: 32px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #303133 0%, #606266 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px;
+  line-height: 1.2;
 }
 
 .stat-label {
   font-size: 14px;
   color: #909399;
+  font-weight: 500;
 }
 
 .recent-history {
-  margin-top: 20px;
+  margin-top: 24px;
+}
+
+:deep(.recent-history .el-card__header) {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f2f5;
 }
 
 .card-header {
@@ -255,8 +276,23 @@ onUnmounted(() => {
   align-items: center;
 }
 
+.card-header span {
+  font-weight: 600;
+  font-size: 16px;
+  color: #303133;
+}
+
+:deep(.el-button--primary) {
+  font-weight: 500;
+}
+
 .desktop-table {
   width: 100%;
+}
+
+:deep(.el-table th) {
+  background: #fafafa !important;
+  font-weight: 600;
 }
 
 .mobile-list {
@@ -273,11 +309,11 @@ onUnmounted(() => {
   align-items: center;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid #f0f2f5;
 }
 
 .config-name {
-  font-weight: 500;
+  font-weight: 600;
   font-size: 15px;
   color: #303133;
 }
@@ -298,27 +334,28 @@ onUnmounted(() => {
 }
 
 .info-row .value {
-  color: #303133;
+  color: #606266;
   flex: 1;
   word-break: break-all;
 }
 
 @media (max-width: 768px) {
   .stats-row {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
   }
 
   .stat-card {
-    gap: 12px;
+    gap: 14px;
   }
 
   .stat-icon {
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
   }
 
   .stat-value {
-    font-size: 22px;
+    font-size: 24px;
   }
 
   .stat-label {
@@ -334,18 +371,18 @@ onUnmounted(() => {
   }
 
   .recent-history {
-    margin-top: 12px;
+    margin-top: 16px;
   }
 }
 
 @media (max-width: 480px) {
   .stat-value {
-    font-size: 20px;
+    font-size: 22px;
   }
 
   .stat-icon {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
   }
 }
 </style>

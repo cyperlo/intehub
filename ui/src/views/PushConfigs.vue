@@ -28,7 +28,7 @@
               <el-icon><Grid /></el-icon>
               字段
             </el-button>
-            <el-button type="primary" size="small" @click="handleTest(row)" link>
+            <el-button type="info" size="small" @click="handleTest(row)" link>
               <el-icon><Promotion /></el-icon>
               测试
             </el-button>
@@ -69,7 +69,7 @@
               <el-icon><Grid /></el-icon>
               字段
             </el-button>
-            <el-button type="primary" size="small" @click="handleTest(config)">
+            <el-button type="info" size="small" @click="handleTest(config)">
               <el-icon><Promotion /></el-icon>
               测试
             </el-button>
@@ -153,7 +153,7 @@
     </el-dialog>
     
     <!-- 字段配置对话框 -->
-    <el-dialog v-model="fieldDialogVisible" title="配置字段" :width="isMobile ? '95%' : '600px'" :fullscreen="isMobile">
+    <el-dialog v-model="fieldDialogVisible" title="配置字段" :width="isMobile ? '95%' : '800px'" :fullscreen="isMobile">
       <div style="margin-bottom: 16px;">
         <el-alert type="info" :closable="false">
           选择此配置使用的字段，执行时将根据这些字段生成表单
@@ -170,6 +170,7 @@
         }"
         filterable
         filter-placeholder="搜索字段"
+        class="custom-transfer"
       />
       
       <template #footer>
@@ -178,8 +179,8 @@
       </template>
     </el-dialog>
     
-    <!-- 测试集成对话框 -->
-    <el-dialog v-model="testDialogVisible" title="测试集成" :width="isMobile ? '95%' : '600px'" :fullscreen="isMobile">
+    <!-- 测试推送对话框 -->
+    <el-dialog v-model="testDialogVisible" title="测试推送" :width="isMobile ? '95%' : '600px'" :fullscreen="isMobile">
       <div v-if="testFields.length > 0">
         <el-form :model="testFormData" label-width="100px">
           <el-form-item 
@@ -430,10 +431,10 @@ const handleTestSubmit = async () => {
   testing.value = true
   try {
     await sendPush({ config_id: testConfigId.value!, data: testFormData })
-    ElMessage.success('集成成功')
+    ElMessage.success('推送成功')
     testDialogVisible.value = false
   } catch (error: any) {
-    console.error('集成失败:', error)
+    console.error('推送失败:', error)
   } finally {
     testing.value = false
   }
@@ -441,6 +442,7 @@ const handleTestSubmit = async () => {
 
 const resetForm = () => {
   Object.assign(form, {
+    id: undefined,
     name: '',
     description: '',
     url: '',
@@ -544,6 +546,37 @@ onUnmounted(() => {
   flex-wrap: wrap;
   padding-top: 8px;
   border-top: 1px solid #ebeef5;
+}
+
+/* 穿梭框样式修复 */
+:deep(.el-transfer) {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+:deep(.el-transfer__buttons) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 16px;
+}
+
+:deep(.el-transfer__button) {
+  margin: 4px 0;
+}
+
+:deep(.el-transfer-panel) {
+  flex: 1;
+  max-width: 300px;
+}
+
+:deep(.el-transfer-panel__body) {
+  height: 300px;
+}
+
+:deep(.el-transfer-panel__list) {
+  height: 100%;
 }
 
 @media (max-width: 768px) {

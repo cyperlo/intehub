@@ -62,6 +62,7 @@ func MustProvideConfig() *config.Config {
 	viper.BindEnv("postgresql.uri", "INTEHUB_POSTGRESQL_URI")
 	viper.BindEnv("jwt.secret", "INTEHUB_JWT_SECRET")
 	viper.BindEnv("apiPrefix", "INTEHUB_API_PREFIX")
+	viper.BindEnv("crypto.key", "INTEHUB_CRYPTO_KEY")
 
 	// 读取配置文件（如果不存在则使用环境变量）
 	err := viper.ReadInConfig()
@@ -161,8 +162,8 @@ func ProvideFieldService(model models.Model) fieldService.Service {
 	return fieldService.New(model.FieldModel())
 }
 
-func ProvidePushService(model models.Model) pushService.Service {
-	return pushService.New(model.PushModel())
+func ProvidePushService(model models.Model, cfg *config.Config) pushService.Service {
+	return pushService.New(model.PushModel(), cfg.Crypto.Key)
 }
 
 func ProvideScheduleService(model models.Model, appService appService.Service, pushService pushService.Service, workflowService workflowService.Service) scheduleService.Service {
@@ -190,8 +191,8 @@ func ProvideFieldHandler(fieldService fieldService.Service) *field.Handler {
 	return field.NewHandler(fieldService)
 }
 
-func ProvidePushHandler(pushService pushService.Service) *push.Handler {
-	return push.NewHandler(pushService)
+func ProvidePushHandler(cfg *config.Config, pushService pushService.Service) *push.Handler {
+	return push.NewHandler(pushService, cfg.Crypto.Key)
 }
 
 func ProvideScheduleHandler(scheduleService scheduleService.Service) *schedule.Handler {

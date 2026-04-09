@@ -5,6 +5,7 @@ import (
 	pushModel "intehub/internal/app/models/push"
 	pushService "intehub/internal/app/service/push"
 	httputil "intehub/internal/utils/http"
+	cryptoutil "intehub/internal/utils/crypto"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -12,10 +13,14 @@ import (
 
 type Handler struct {
 	pushService pushService.Service
+	cryptoKey   string
 }
 
-func NewHandler(pushService pushService.Service) *Handler {
-	return &Handler{pushService: pushService}
+func NewHandler(pushService pushService.Service, cryptoKey string) *Handler {
+	return &Handler{
+		pushService: pushService,
+		cryptoKey:   cryptoKey,
+	}
 }
 
 func (h *Handler) ListConfigs(c *gin.Context) (interface{}, error) {
@@ -31,6 +36,12 @@ func (h *Handler) ListConfigs(c *gin.Context) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// 隐藏 URL，不返回给前端
+	for _, cfg := range configs {
+		cfg.URL = "********"
+	}
+
 	return configs, nil
 }
 
@@ -40,6 +51,10 @@ func (h *Handler) GetConfig(c *gin.Context) (interface{}, error) {
 	if err != nil {
 		return nil, errors.New("配置不存在")
 	}
+
+	// 隐藏 URL
+	config.URL = "********"
+
 	return config, nil
 }
 
@@ -54,9 +69,22 @@ func (h *Handler) CreateConfig(c *gin.Context) (interface{}, error) {
 		config.UserID = userID.(uint)
 	}
 
+	// 加密 URL
+	if config.URL != "" {
+		encrypted, err := cryptoutil.EncryptURL(config.URL, h.cryptoKey)
+		if err != nil {
+			return nil, errors.New("URL加密失败")
+		}
+		config.URL = encrypted
+	}
+
 	if err := h.pushService.CreateConfig(&config); err != nil {
 		return nil, err
 	}
+
+	// 返回时隐藏 URL
+	config.URL = "********"
+
 	return config, nil
 }
 
@@ -68,9 +96,23 @@ func (h *Handler) UpdateConfig(c *gin.Context) (interface{}, error) {
 	}
 
 	config.ID = uint(id)
+
+	// 加密 URL
+	if config.URL != "" {
+		encrypted, err := cryptoutil.EncryptURL(config.URL, h.cryptoKey)
+		if err != nil {
+			return nil, errors.New("URL加密失败")
+		}
+		config.URL = encrypted
+	}
+
 	if err := h.pushService.UpdateConfig(&config); err != nil {
 		return nil, err
 	}
+
+	// 返回时隐藏 URL
+	config.URL = "********"
+
 	return config, nil
 }
 

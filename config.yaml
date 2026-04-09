@@ -9,4 +9,7 @@ postgresql:
 jwt:
   secret: "ZbQx4Q9Hk3m1yJrU6A2cN8e0SxK5PpFvLw7DToE+I="
 
+crypto:
+  key: "6NrJpMy2N5t+PzoQrm1If9WXM2MZRzShpMNt5yvrO0A="
+
 apiPrefix: "/api"
