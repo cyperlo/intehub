@@ -54,6 +54,10 @@ export const toggleScheduleTask = (id: number) => {
   return request.post(`/schedule/tasks/${id}/toggle`)
 }
 
+export const runScheduleTask = (id: number) => {
+  return request.post(`/schedule/tasks/${id}/run`)
+}
+
 export const getScheduleLogs = (params: any) => {
   return request.get<any, { list: ScheduleLog[]; total: number; page: number }>('/schedule/logs', { params })
 }

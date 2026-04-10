@@ -28,8 +28,12 @@
             {{ formatTime(row.last_run_at) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="280" fixed="right">
+        <el-table-column label="操作" width="320" fixed="right">
           <template #default="{ row }">
+            <el-button type="primary" size="small" @click="handleRunNow(row)" :loading="runningTaskId === row.id">
+              <el-icon><VideoPlay /></el-icon>
+              执行
+            </el-button>
             <el-button 
               :type="row.enabled ? 'warning' : 'success'" 
               size="small" 
@@ -37,7 +41,10 @@
             >
               {{ row.enabled ? '禁用' : '启用' }}
             </el-button>
-            <el-button type="primary" size="small" @click="handleViewLogs(row)">日志</el-button>
+            <el-button type="info" size="small" @click="handleCopy(row)">
+              <el-icon><DocumentCopy /></el-icon>
+              复制
+            </el-button>
             <el-button type="warning" size="small" @click="handleEdit(row)">编辑</el-button>
             <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
@@ -93,9 +100,18 @@
           <el-input v-model="form.description" type="textarea" :rows="2" />
         </el-form-item>
         <el-form-item label="Cron表达式" prop="cron_expr">
-          <el-input v-model="form.cron_expr" placeholder="例如: 0 */5 * * * (每5分钟)" />
-          <div style="color: #909399; font-size: 12px; margin-top: 4px;">
-            格式: 秒 分 时 日 月 周，例如 "0 0 * * * *" 表示每小时执行
+          <el-input v-model="form.cron_expr" placeholder="选择或输入 Cron 表达式" />
+          <div style="margin-top: 8px;">
+            <el-tag 
+              v-for="preset in cronPresets" 
+              :key="preset.value"
+              class="cron-preset"
+              :type="form.cron_expr === preset.value ? 'primary' : 'info'"
+              @click="form.cron_expr = preset.value"
+              style="cursor: pointer; margin-right: 6px; margin-bottom: 4px;"
+            >
+              {{ preset.label }}
+            </el-tag>
           </div>
         </el-form-item>
         <el-form-item label="任务类型" prop="task_type">
@@ -227,12 +243,14 @@
 import { ref, onMounted, onUnmounted, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { VideoPlay, DocumentCopy } from '@element-plus/icons-vue'
 import { 
   getScheduleTasks, 
   createScheduleTask, 
   updateScheduleTask, 
   deleteScheduleTask,
   toggleScheduleTask,
+  runScheduleTask,
   getScheduleLogs,
   type ScheduleTask,
   type ScheduleLog
@@ -263,6 +281,20 @@ const logPage = ref(1)
 const logPageSize = ref(20)
 const logTotal = ref(0)
 const currentLogTaskId = ref<number>()
+const runningTaskId = ref<number>()
+
+// Cron 表达式预设
+const cronPresets = [
+  { label: '每分钟', value: '0 * * * * ?' },
+  { label: '每5分钟', value: '0 */5 * * * ?' },
+  { label: '每15分钟', value: '0 */15 * * * ?' },
+  { label: '每30分钟', value: '0 */30 * * * ?' },
+  { label: '每小时', value: '0 0 * * * ?' },
+  { label: '每天0点', value: '0 0 0 * * ?' },
+  { label: '每天8点', value: '0 0 8 * * ?' },
+  { label: '每周一', value: '0 0 0 ? * 1' },
+  { label: '每月1号', value: '0 0 0 1 * ?' },
+]
 
 // 字段相关
 const configFields = ref<any[]>([])
@@ -490,6 +522,56 @@ const handleToggle = async (row: ScheduleTask) => {
   }
 }
 
+const handleRunNow = async (row: ScheduleTask) => {
+  try {
+    runningTaskId.value = row.id!
+    await runScheduleTask(row.id!)
+    ElMessage.success('任务已开始执行')
+    // 刷新列表
+    loadTasks()
+  } catch (error) {
+    // 错误已在拦截器处理
+  } finally {
+    runningTaskId.value = undefined
+  }
+}
+
+const handleCopy = (row: ScheduleTask) => {
+  dialogTitle.value = '复制任务'
+  currentTaskId.value = undefined
+  resetForm()
+  
+  // 复制任务数据
+  Object.assign(form, {
+    name: row.name + ' (副本)',
+    description: row.description,
+    cron_expr: row.cron_expr,
+    task_type: row.task_type,
+    config_id: row.config_id,
+    app_id: row.app_id,
+    workflow_id: row.workflow_id,
+    enabled: false
+  })
+  
+  // 加载字段配置
+  if (row.config_id) {
+    handleConfigChange(row.config_id)
+  }
+  
+  // 复制字段数据
+  if (row.field_data) {
+    try {
+      const savedData = JSON.parse(row.field_data)
+      Object.keys(fieldDataForm).forEach(key => delete fieldDataForm[key])
+      Object.assign(fieldDataForm, savedData)
+    } catch (error) {
+      console.error('解析字段数据失败:', error)
+    }
+  }
+  
+  dialogVisible.value = true
+}
+
 const handleDelete = async (row: ScheduleTask) => {
   try {
     await ElMessageBox.confirm('确定要删除这个任务吗?', '提示', {
@@ -658,5 +740,13 @@ onUnmounted(() => {
   padding: 16px;
   border-radius: 4px;
   margin-bottom: 16px;
+}
+
+.cron-preset {
+  transition: all 0.2s;
+}
+
+.cron-preset:hover {
+  transform: scale(1.05);
 }
 </style>
