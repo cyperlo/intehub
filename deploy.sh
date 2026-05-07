@@ -255,7 +255,7 @@ deploy_frontend() {
     docker run -d \
         --name intehub-frontend \
         --network intehub-network \
-        -p 80:80 \
+        -p 801:80 \
         --memory="128m" \
         --memory-swap="256m" \
         --restart unless-stopped \
@@ -310,7 +310,7 @@ health_check() {
     
     # 检查前端
     log_info "检查前端健康状态..."
-    if curl -f -s -o /dev/null http://localhost:80 2>&1; then
+    if curl -f -s -o /dev/null http://localhost:801 2>&1; then
         log_info "✓ 前端健康检查通过"
     else
         log_warn "前端健康检查失败，但容器正在运行"
@@ -329,7 +329,7 @@ show_info() {
     echo ""
     echo "服务地址:"
     echo "  后端: http://localhost:8080"
-    echo "  前端: http://localhost:80"
+    echo "  前端: http://localhost:801"
     echo ""
     echo "常用命令:"
     echo "  查看后端日志: docker logs -f intehub-backend"
