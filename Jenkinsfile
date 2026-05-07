@@ -6,6 +6,11 @@ pipeline {
         IMAGE_TAG = "${BUILD_NUMBER}"
         BACKEND_IMAGE = "intehub-backend:${IMAGE_TAG}"
         FRONTEND_IMAGE = "intehub-frontend:${IMAGE_TAG}"
+        
+        // 从 Jenkins Credentials 获取敏感信息
+        POSTGRESQL_URI = credentials('intehub-postgresql-uri')  // 数据库连接URI
+        JWT_SECRET = credentials('intehub-jwt-secret')          // JWT 密钥
+        CRYPTO_KEY = credentials('intehub-crypto-key')         // 加密密钥
     }
     
     stages {
@@ -22,7 +27,6 @@ pipeline {
                 script {
                     sh '''
                         docker build -t ${BACKEND_IMAGE} -f Dockerfile.backend .
-                        docker tag ${BACKEND_IMAGE} ${BACKEND_IMAGE}
                     '''
                 }
             }
@@ -34,7 +38,6 @@ pipeline {
                 script {
                     sh '''
                         docker build -t ${FRONTEND_IMAGE} -f Dockerfile.frontend .
-                        docker tag ${FRONTEND_IMAGE} ${FRONTEND_IMAGE}
                     '''
                 }
             }
@@ -46,41 +49,29 @@ pipeline {
                 script {
                     // 停止并删除旧容器
                     sh '''
-                        docker stop intehub-backend intehub-frontend intehub-postgres || true
-                        docker rm intehub-backend intehub-frontend intehub-postgres || true
+                        docker stop intehub-backend intehub-frontend || true
+                        docker rm intehub-backend intehub-frontend || true
                     '''
                     
                     // 创建网络（如果不存在）
                     sh 'docker network create intehub-network || true'
-                    
-                    // 启动 PostgreSQL 容器
-                    sh '''
-                        docker run -d \
-                          --name intehub-postgres \
-                          --network intehub-network \
-                          -e POSTGRES_DB=intehub \
-                          -e POSTGRES_USER=intehub \
-                          -e POSTGRES_PASSWORD=intehub123 \
-                          -v intehub-postgres-data:/var/lib/postgresql/data \
-                          --restart unless-stopped \
-                          postgres:16-alpine
-                    '''
-                    
-                    // 等待数据库启动
-                    sh 'sleep 10'
                     
                     // 启动后端容器
                     sh '''
                         docker run -d \
                           --name intehub-backend \
                           --network intehub-network \
-                          -e INTEHUB_POSTGRESQL_URI="host=intehub-postgres port=5432 user=intehub password=intehub123 dbname=intehub sslmode=disable" \
+                          -e INTEHUB_POSTGRESQL_URI="${POSTGRESQL_URI}" \
                           -e INTEHUB_SERVER_PORT=8080 \
-                          -e INTEHUB_JWT_SECRET="your-secret-key-change-in-production" \
+                          -e INTEHUB_JWT_SECRET="${JWT_SECRET}" \
+                          -e INTEHUB_CRYPTO_KEY="${CRYPTO_KEY}" \
                           -p 8080:8080 \
                           --restart unless-stopped \
                           ${BACKEND_IMAGE}
                     '''
+                    
+                    // 等待后端启动
+                    sh 'sleep 5'
                     
                     // 启动前端容器
                     sh '''
@@ -91,6 +82,38 @@ pipeline {
                           --restart unless-stopped \
                           ${FRONTEND_IMAGE}
                     '''
+                }
+            }
+        }
+        
+        stage('Health Check') {
+            steps {
+                echo '检查服务健康状态...'
+                script {
+                    // 等待服务启动
+                    sh 'sleep 10'
+                    
+                    // 检查后端
+                    def backendHealth = sh(
+                        script: "curl -f -s http://localhost:8080/api/health || exit 1",
+                        returnStatus: true
+                    )
+                    
+                    if (backendHealth != 0) {
+                        error "后端健康检查失败"
+                    }
+                    
+                    // 检查前端
+                    def frontendHealth = sh(
+                        script: "curl -f -s http://localhost:80 || exit 1",
+                        returnStatus: true
+                    )
+                    
+                    if (frontendHealth != 0) {
+                        error "前端健康检查失败"
+                    }
+                    
+                    echo '所有服务健康检查通过！'
                 }
             }
         }
@@ -124,10 +147,16 @@ pipeline {
     
     post {
         success {
-            echo '部署成功！'
+            echo '✅ 部署成功！'
         }
         failure {
-            echo '部署失败！'
+            echo '❌ 部署失败！开始回滚...'
+            script {
+                sh '''
+                    docker stop intehub-backend intehub-frontend || true
+                    docker rm intehub-backend intehub-frontend || true
+                '''
+            }
         }
         always {
             echo '清理工作空间...'
