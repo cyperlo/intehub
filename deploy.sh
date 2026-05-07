@@ -121,17 +121,34 @@ check_env() {
     log_info "✓ 环境变量检查通过"
 }
 
-# 清理 Docker 缓存
-clean_docker_cache() {
-    log_step "清理 Docker 缓存..."
+# 清理旧镜像
+clean_old_images() {
+    log_step "清理旧镜像..."
     
-    # 清理构建缓存
-    docker builder prune -f --filter "until=24h" 2>/dev/null || true
+    # 清理后端旧镜像（保留最新3个版本 + latest + backup）
+    log_info "清理后端旧镜像..."
+    docker images intehub-backend --format "{{.Tag}}" | \
+        grep -E '^[0-9]+$' | \
+        sort -rn | \
+        tail -n +4 | \
+        xargs -r -I {} docker rmi intehub-backend:{} 2>/dev/null || true
+    
+    # 清理前端旧镜像（保留最新3个版本 + latest + backup）
+    log_info "清理前端旧镜像..."
+    docker images intehub-frontend --format "{{.Tag}}" | \
+        grep -E '^[0-9]+$' | \
+        sort -rn | \
+        tail -n +4 | \
+        xargs -r -I {} docker rmi intehub-frontend:{} 2>/dev/null || true
     
     # 清理悬空镜像
     docker image prune -f 2>/dev/null || true
     
-    log_info "✓ Docker 缓存清理完成"
+    # 显示剩余镜像
+    log_info "当前镜像列表："
+    docker images | grep -E "REPOSITORY|intehub"
+    
+    log_info "✓ 旧镜像清理完成"
 }
 
 # 备份当前版本
@@ -467,7 +484,7 @@ main() {
     check_env
     
     if [ "$skip_build" = false ]; then
-        clean_docker_cache
+        clean_old_images
         backup_current_version
         build_backend
         build_frontend
@@ -487,6 +504,11 @@ main() {
             rollback
             exit 1
         fi
+    fi
+    
+    # 部署成功后再次清理
+    if [ "$skip_build" = false ]; then
+        clean_old_images
     fi
     
     show_info
