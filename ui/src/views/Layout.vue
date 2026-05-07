@@ -22,7 +22,7 @@
     </el-header>
 
     <!-- 移动端抽屉菜单 -->
-    <el-drawer v-model="drawerVisible" direction="ltr" :size="250" v-if="isMobile">
+    <el-drawer v-model="drawerVisible" direction="ltr" :size="260" v-if="isMobile" class="mobile-drawer">
       <template #header>
         <div class="drawer-logo">InteHub</div>
       </template>
@@ -30,6 +30,7 @@
         :default-active="activeMenu"
         router
         @select="drawerVisible = false"
+        class="mobile-menu"
       >
         <el-menu-item index="/dashboard">
           <el-icon><DataLine /></el-icon>
@@ -412,5 +413,74 @@ const handleLogout = async () => {
     padding: 12px;
     padding-top: 68px;
   }
+}
+
+/* 移动端抽屉菜单样式 */
+:deep(.mobile-drawer) {
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+}
+
+:deep(.mobile-drawer .el-drawer__header) {
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 0;
+  padding: 16px;
+}
+
+:deep(.mobile-drawer .el-drawer__body) {
+  padding: 0;
+}
+
+:deep(.mobile-menu) {
+  background: transparent !important;
+  border: none;
+}
+
+:deep(.mobile-menu .el-menu-item) {
+  color: rgba(255, 255, 255, 0.85) !important;
+  height: 52px;
+  margin: 4px 12px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+}
+
+:deep(.mobile-menu .el-menu-item:hover),
+:deep(.mobile-menu .el-menu-item.is-active) {
+  background: rgba(64, 158, 255, 0.2) !important;
+  color: #fff !important;
+}
+
+:deep(.mobile-menu .el-menu-item .el-icon) {
+  margin-right: 12px;
+  font-size: 20px;
+}
+
+:deep(.mobile-menu .el-sub-menu__title) {
+  color: rgba(255, 255, 255, 0.85) !important;
+  height: 52px;
+  margin: 4px 12px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+}
+
+:deep(.mobile-menu .el-sub-menu__title:hover) {
+  background: rgba(64, 158, 255, 0.15) !important;
+}
+
+:deep(.mobile-menu .el-sub-menu .el-menu-item) {
+  color: rgba(255, 255, 255, 0.7) !important;
+  padding-left: 52px !important;
+  height: 46px;
+}
+
+:deep(.mobile-menu .el-sub-menu .el-menu-item.is-active) {
+  background: rgba(64, 158, 255, 0.2) !important;
+  color: #fff !important;
+}
+
+:deep(.mobile-menu .el-sub-menu__icon-arrow) {
+  color: rgba(255, 255, 255, 0.5);
 }
 </style>

@@ -183,7 +183,7 @@ func (s *service) RunWithInput(id uint, input map[string]interface{}) (*appModel
 	startTime := time.Now()
 
 	// 根据语言类型创建应用实例
-	var appIns appl.AppIns
+	var appIns *appl.AppIns
 	switch app.Language {
 	case "go", "":
 		goApp, err := appl.NewGoAppIns(app.Code)
@@ -195,7 +195,18 @@ func (s *service) RunWithInput(id uint, input map[string]interface{}) (*appModel
 			s.model.CreateLog(log)
 			return log, fmt.Errorf("创建应用实例失败: %w", err)
 		}
-		appIns.Runnable = goApp
+		appIns = &appl.AppIns{Runnable: goApp}
+	case "javascript":
+		jsApp, err := appl.NewJavaScriptAppIns(app.Code)
+		if err != nil {
+			log.Status = "error"
+			log.Error = fmt.Sprintf("创建 JavaScript 应用实例失败: %v", err)
+			log.FinishedAt = time.Now()
+			log.Duration = time.Since(startTime).Milliseconds()
+			s.model.CreateLog(log)
+			return log, fmt.Errorf("创建 JavaScript 应用实例失败: %w", err)
+		}
+		appIns = &appl.AppIns{Runnable: jsApp}
 	default:
 		log.Status = "error"
 		log.Error = fmt.Sprintf("不支持的语言类型: %s", app.Language)

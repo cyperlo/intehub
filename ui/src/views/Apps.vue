@@ -139,15 +139,18 @@
       <div v-show="currentStep === 1" class="step-content">
         <div class="code-header">
           <span class="code-title">应用代码</span>
-          <el-tag size="small" type="success">Go</el-tag>
+          <el-select v-model="form.language" size="small" style="width: 120px;" @change="handleLanguageChange">
+            <el-option label="Go" value="go" />
+            <el-option label="JavaScript" value="javascript" />
+          </el-select>
         </div>
         <div class="code-tip">
-          支持语法高亮、自动补全。快捷键：Ctrl+Space 触发代码提示
+          {{ form.language === 'go' ? 'Go 代码，执行函数名为 Run(input map[string]any)' : 'JavaScript 代码，执行函数名为 Run(input)' }}
         </div>
         <div class="code-editor-wrapper">
           <CodeEditor 
             v-model="form.code" 
-            language="go"
+            :language="form.language"
             height="100%"
           />
         </div>
@@ -673,6 +676,54 @@ const resetForm = () => {
   })
   formRef.value?.clearValidate()
 }
+
+// 语言切换时更新示例代码
+const handleLanguageChange = () => {
+  const currentCode = form.code
+  if (!currentCode || currentCode === goTemplate || currentCode === jsTemplate) {
+    if (form.language === 'go') {
+      form.code = goTemplate
+    } else if (form.language === 'javascript') {
+      form.code = jsTemplate
+    }
+  }
+}
+
+// JavaScript 示例代码模板
+const jsTemplate = `// JavaScript 应用入口函数
+// input 对象包含配置参数和运行时参数
+// 返回包含执行结果的对象
+
+function Run(input) {
+    // 获取配置参数
+    const apiKey = input.api_key || "";
+    const url = input.url || "https://httpbin.org/get";
+    
+    // 示例：构造响应
+    return {
+        status: "success",
+        message: "Hello from JavaScript!",
+        data: {
+            apiKey: apiKey,
+            url: url
+        }
+    };
+}
+`
+
+// Go 示例代码模板
+const goTemplate = `package main
+
+func Run(input map[string]any) (map[string]any, error) {
+    // 获取配置参数
+    apiKey := input["api_key"].(string)
+    
+    return map[string]any{
+        "status": "success",
+        "message": "Hello from Go!",
+    }, nil
+}
+`
 
 onMounted(() => {
   window.addEventListener('resize', handleResize)
