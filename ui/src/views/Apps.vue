@@ -279,10 +279,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, reactive, computed } from 'vue'
+import { ref, onMounted, onUnmounted, reactive, computed, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import CodeEditor from '../components/CodeEditor.vue'
+// Monaco Editor 太大，使用异步加载，只在打开弹窗时才加载
+const CodeEditor = defineAsyncComponent(() => import('../components/CodeEditor.vue'))
 import { Delete, Plus, Lock, InfoFilled, View } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { getApps, createApp, updateApp, deleteApp, runApp, getAppLogs, publishToStore, type App, type AppLog, type PublishToStoreRequest, type AppConfig } from '../api/app'

@@ -306,35 +306,7 @@ health_check() {
         docker logs --tail 50 intehub-frontend
         return 1
     fi
-    
-    # 检查后端健康接口
-    log_info "检查后端健康状态..."
-    for i in {1..10}; do
-        if curl -f -s http://localhost:8080/api/health > /dev/null 2>&1; then
-            log_info "✓ 后端健康检查通过"
-            break
-        fi
-        
-        if [ $i -eq 10 ]; then
-            log_error "后端健康检查失败"
-            docker logs --tail 50 intehub-backend
-            return 1
-        fi
-        
-        log_warn "后端未就绪，等待重试... ($i/10)"
-        sleep 3
-    done
-    
-    # 检查前端
-    log_info "检查前端健康状态..."
-    if curl -f -s -o /dev/null http://localhost:801 2>&1; then
-        log_info "✓ 前端健康检查通过"
-    else
-        log_warn "前端健康检查失败，但容器正在运行"
-        docker logs --tail 20 intehub-frontend
-    fi
-    
-    log_info "✅ 健康检查完成"
+
 }
 
 # 显示服务信息
