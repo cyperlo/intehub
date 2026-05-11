@@ -10,6 +10,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # 配置
@@ -31,6 +32,33 @@ log_error() {
 
 log_step() {
     echo -e "${BLUE}[STEP]${NC} $1"
+}
+
+# 显示 Git 信息
+show_git_info() {
+    if [ ! -d ".git" ]; then
+        log_warn "不是 Git 仓库，跳过 Git 信息显示"
+        return
+    fi
+    
+    log_step "当前代码版本信息..."
+    
+    local branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+    local commit=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    local date=$(git log -1 --format="%ci" 2>/dev/null | cut -d' ' -f1 || echo "unknown")
+    local author=$(git log -1 --format="%an" 2>/dev/null || echo "unknown")
+    
+    echo ""
+    echo -e "  ${CYAN}分支:${NC} ${branch}"
+    echo -e "  ${CYAN}提交:${NC} ${commit}"
+    echo -e "  ${CYAN}日期:${NC} ${date}"
+    echo -e "  ${CYAN}作者:${NC} ${author}"
+    echo ""
+    echo -e "  ${YELLOW}最近提交:${NC}"
+    git log --oneline -5 2>/dev/null | while read -r line; do
+        echo -e "    ${line}"
+    done
+    echo ""
 }
 
 # 显示帮助信息
@@ -450,6 +478,9 @@ main() {
     
     log_info "开始部署 InteHub..."
     echo ""
+    
+    # 显示 Git 版本信息
+    show_git_info
     
     # 执行部署流程
     check_system
