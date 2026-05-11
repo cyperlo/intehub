@@ -114,6 +114,20 @@ func (h *Handler) GetLogs(c *gin.Context) (interface{}, error) {
 	}, nil
 }
 
+func (h *Handler) RunTask(c *gin.Context) (interface{}, error) {
+	id, _ := strconv.ParseUint(c.Param("id"), 10, 32)
+	task, err := h.scheduleService.GetTask(uint(id))
+	if err != nil {
+		return nil, errors.New("任务不存在")
+	}
+
+	if err := h.scheduleService.ExecuteTask(task); err != nil {
+		return nil, err
+	}
+
+	return gin.H{"message": "任务执行成功"}, nil
+}
+
 // HandleScheduleAPI 注册路由
 func (h *Handler) HandleScheduleAPI(r *gin.RouterGroup) {
 	j := httputil.NewJSONHandler(r)
@@ -123,5 +137,6 @@ func (h *Handler) HandleScheduleAPI(r *gin.RouterGroup) {
 	j.PUT("/tasks/:id", h.UpdateTask)
 	j.DELETE("/tasks/:id", h.DeleteTask)
 	j.POST("/tasks/:id/toggle", h.ToggleTask)
+	j.POST("/tasks/:id/run", h.RunTask)
 	j.GET("/logs", h.GetLogs)
 }
