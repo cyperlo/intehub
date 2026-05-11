@@ -275,11 +275,14 @@ deploy_backend() {
     docker run -d \
         --name intehub-backend \
         --network intehub-network \
+        -e TZ=Asia/Shanghai \
         -e INTEHUB_POSTGRESQL_URI="${INTEHUB_POSTGRESQL_URI}" \
         -e INTEHUB_SERVER_PORT=8080 \
         -e INTEHUB_JWT_SECRET="${INTEHUB_JWT_SECRET}" \
         -e INTEHUB_CRYPTO_KEY="${INTEHUB_CRYPTO_KEY}" \
         -p 8080:8080 \
+        -v /etc/localtime:/etc/localtime:ro \
+        -v /etc/timezone:/etc/timezone:ro \
         -v /var/intehub/data:/app/data \
         -v /var/intehub/logs:/app/logs \
         --memory="512m" \
