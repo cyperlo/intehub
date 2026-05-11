@@ -27,7 +27,7 @@ func New(model scheduleModel.Model, appSvc appService.Service, pushSvc pushServi
 		appService:      appSvc,
 		pushService:     pushSvc,
 		workflowService: workflowSvc,
-		cron:            cron.New(),
+		cron:            cron.New(cron.WithSeconds()),
 		cronEntries:     make(map[uint]cron.EntryID),
 	}
 }
@@ -45,7 +45,9 @@ func (s *service) CreateTask(task *scheduleModel.ScheduleTask) error {
 		return err
 	}
 	if task.Enabled {
-		s.addTaskToCron(task)
+		if err := s.addTaskToCron(task); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -56,7 +58,9 @@ func (s *service) UpdateTask(task *scheduleModel.ScheduleTask) error {
 	}
 	s.removeTaskFromCron(task.ID)
 	if task.Enabled {
-		s.addTaskToCron(task)
+		if err := s.addTaskToCron(task); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -78,7 +82,9 @@ func (s *service) ToggleTask(id uint) error {
 		s.removeTaskFromCron(id)
 	} else {
 		task.Enabled = true
-		s.addTaskToCron(task)
+		if err := s.addTaskToCron(task); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -173,7 +179,9 @@ func (s *service) StartScheduler() error {
 
 	for _, task := range tasks {
 		if task.Enabled {
-			s.addTaskToCron(task)
+			if err := s.addTaskToCron(task); err != nil {
+				return fmt.Errorf("启动任务 %s 失败: %v", task.Name, err)
+			}
 		}
 	}
 
@@ -185,7 +193,7 @@ func (s *service) StopScheduler() {
 	s.cron.Stop()
 }
 
-func (s *service) addTaskToCron(task *scheduleModel.ScheduleTask) {
+func (s *service) addTaskToCron(task *scheduleModel.ScheduleTask) error {
 	if entryID, exists := s.cronEntries[task.ID]; exists {
 		s.cron.Remove(entryID)
 	}
@@ -194,9 +202,12 @@ func (s *service) addTaskToCron(task *scheduleModel.ScheduleTask) {
 		s.ExecuteTask(task)
 	})
 
-	if err == nil {
-		s.cronEntries[task.ID] = entryID
+	if err != nil {
+		return fmt.Errorf("添加定时任务失败: %v", err)
 	}
+
+	s.cronEntries[task.ID] = entryID
+	return nil
 }
 
 func (s *service) removeTaskFromCron(taskID uint) {
