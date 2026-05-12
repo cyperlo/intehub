@@ -403,6 +403,14 @@
           </template>
         </el-table-column>
       </el-table>
+      <el-pagination
+        v-model:current-page="logPage"
+        :page-size="logPageSize"
+        :total="logTotal"
+        layout="total, prev, pager, next"
+        @current-change="loadLogs"
+        style="margin-top: 16px; text-align: center;"
+      />
       <el-empty v-if="!logsLoading && logs.length === 0" description="暂无执行日志" />
     </el-dialog>
 
@@ -685,6 +693,10 @@ const runResult = ref<any>({})
 const logsDialogVisible = ref(false)
 const logsLoading = ref(false)
 const logs = ref<WorkflowLog[]>([])
+const logPage = ref(1)
+const logPageSize = ref(10)
+const logTotal = ref(0)
+const currentLogWorkflowId = ref<number>()
 
 const logDetailVisible = ref(false)
 const currentLog = ref<WorkflowLog | null>(null)
@@ -1177,17 +1189,29 @@ const deleteWorkflow = async (workflow: Workflow) => {
   }
 }
 
-const viewLogs = async (workflow: Workflow) => {
-  logsDialogVisible.value = true
+const loadLogs = async () => {
+  if (!currentLogWorkflowId.value) return
   logsLoading.value = true
   try {
-    const result = await getWorkflowLogs({ workflow_id: workflow.id, page: 1, page_size: 50 })
+    const result = await getWorkflowLogs({ 
+      workflow_id: currentLogWorkflowId.value, 
+      page: logPage.value, 
+      page_size: logPageSize.value 
+    })
     logs.value = result.list || []
+    logTotal.value = result.total || 0
   } catch (error) {
     ElMessage.error('加载日志失败')
   } finally {
     logsLoading.value = false
   }
+}
+
+const viewLogs = async (workflow: Workflow) => {
+  logsDialogVisible.value = true
+  currentLogWorkflowId.value = workflow.id
+  logPage.value = 1
+  loadLogs()
 }
 
 const viewLogDetail = (log: WorkflowLog) => {
